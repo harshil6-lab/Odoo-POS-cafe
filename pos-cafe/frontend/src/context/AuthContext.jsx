@@ -184,7 +184,14 @@ export const AuthProvider = ({ children }) => {
           .eq('id', data.user.id);
       }
 
-      role = selectedRole;
+      // Re-fetch to confirm profile was created
+      const { data: newProfile } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', data.user.id)
+        .maybeSingle();
+
+      role = newProfile?.role || selectedRole;
     }
 
     setSession(data.session);
