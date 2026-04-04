@@ -155,14 +155,29 @@ export default function Checkout() {
       const taxAmount = parseFloat((subtotal * 0.08).toFixed(2));
       const serviceCharge = parseFloat((subtotal * 0.02).toFixed(2));
       const totalAmount = parseFloat((subtotal + taxAmount + serviceCharge).toFixed(2));
-      const amountInPaise = Math.round(totalAmount * 100);
+
+      // Create Razorpay order via backend
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+      const orderRes = await fetch(`${backendUrl}/create-order`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: totalAmount }),
+      });
+
+      if (!orderRes.ok) {
+        const errBody = await orderRes.json().catch(() => ({}));
+        throw new Error(errBody.error || `Payment server error (${orderRes.status})`);
+      }
+
+      const razorpayOrder = await orderRes.json();
 
       const paymentMethodMap = { cash: 'cash', card: 'card', upi: 'upi_qr' };
 
       const options = {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-        amount: amountInPaise,
-        currency: 'INR',
+        amount: razorpayOrder.amount,
+        currency: razorpayOrder.currency || 'INR',
+        order_id: razorpayOrder.id,
         name: 'Restaurant POS',
         description: `Table ${selectedTableId} · ${cartItems.length} items`,
         prefill: {
