@@ -21,7 +21,7 @@ export const APP_NAV_LINKS = [
 
 export const rolePermissions = {
   manager: ['dashboard', 'tables', 'register', 'billing', 'kitchen', 'orders', 'reports', 'staff', 'menu-editor', 'reservations'],
-  waiter: ['tables', 'register'],
+  waiter: ['tables'],
   cashier: ['tables', 'billing'],
   chef: ['kitchen'],
 };
@@ -50,9 +50,9 @@ export function getNavLinksForRole(role) {
 
 const redirectByRole = {
   customer: '/menu',
-  waiter: '/register',
+  waiter: '/tables',
   manager: '/dashboard',
-  cashier: '/billing',
+  cashier: '/tables',
   chef: '/kitchen',
 };
 

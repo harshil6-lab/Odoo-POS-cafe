@@ -57,43 +57,47 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
+    let cancelled = false;
+
     const restoreSession = async () => {
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      try {
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
-      if (sessionError || !session) {
+        if (cancelled) return;
+
+        if (sessionError || !session) {
+          setLoading(false);
+          return;
+        }
+
+        const role = await fetchUserRole(session.user.id);
+
+        if (cancelled) return;
+
+        setSession(session);
+        setUser(session.user);
+        setRole(role);
         setLoading(false);
-        return;
+
+        // QR customers have a table_code in sessionStorage — skip staff redirect
+        if (sessionStorage.getItem('table_code')) return;
+
+        // Login page handles its own redirect after credentials are entered
+        if (location.pathname === '/login') return;
+
+        if (!role) return;
+
+        if (role === 'manager') navigate('/dashboard');
+        else if (role === 'waiter') navigate('/tables');
+        else if (role === 'cashier') navigate('/tables');
+        else if (role === 'chef') navigate('/kitchen');
+        else navigate('/menu');
+      } catch (err) {
+        if (!cancelled) {
+          console.warn('Session restore error:', err.message);
+          setLoading(false);
+        }
       }
-
-      // Validate the refresh token is still usable — prevents "Invalid Refresh Token" loop
-      const { error: refreshError } = await supabase.auth.refreshSession();
-      if (refreshError) {
-        console.warn('Stale session cleared:', refreshError.message);
-        await supabase.auth.signOut();
-        setLoading(false);
-        return;
-      }
-
-      const role = await fetchUserRole(session.user.id);
-
-      setSession(session);
-      setUser(session.user);
-      setRole(role);
-      setLoading(false);
-
-      // QR customers have a table_code in sessionStorage — skip staff redirect
-      if (sessionStorage.getItem('table_code')) return;
-
-      // Login page handles its own redirect after credentials are entered
-      if (location.pathname === '/login') return;
-
-      if (!role) return;
-
-      if (role === 'manager') navigate('/dashboard');
-      else if (role === 'waiter') navigate('/register');
-      else if (role === 'cashier') navigate('/billing');
-      else if (role === 'chef') navigate('/kitchen');
-      else navigate('/menu');
     };
 
     restoreSession();
@@ -101,6 +105,8 @@ export const AuthProvider = ({ children }) => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, nextSession) => {
+      if (cancelled) return;
+
       // Stale token — clean up instead of looping
       if (event === 'TOKEN_REFRESHED' && !nextSession) {
         await supabase.auth.signOut();
@@ -128,6 +134,7 @@ export const AuthProvider = ({ children }) => {
     });
 
     return () => {
+      cancelled = true;
       subscription.unsubscribe();
     };
   }, []);
@@ -163,11 +170,11 @@ export const AuthProvider = ({ children }) => {
     // Calculate redirect path based on role
     const redirectMap = {
       manager: '/dashboard',
-      waiter: '/register',
-      cashier: '/billing',
+      waiter: '/tables',
+      cashier: '/tables',
       chef: '/kitchen',
       admin: '/dashboard',
-      kitchen: '/kitchen',  // Handle legacy 'kitchen' role
+      kitchen: '/kitchen',
     };
 
     return { redirectTo: redirectMap[role] || '/menu' };

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useRazorpay } from 'react-razorpay';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { useAppState } from '../context/AppStateContext';
@@ -18,9 +19,9 @@ const paymentMethods = [
 export default function Checkout() {
   const navigate = useNavigate();
   const { cartItems, clearCart, customerDetails, setCustomerDetails, selectedTableId, totals } = useAppState();
+  const { Razorpay } = useRazorpay();
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [customerEmail, setCustomerEmail] = useState('');
-  const [showUpiModal, setShowUpiModal] = useState(false);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -129,7 +130,155 @@ export default function Checkout() {
     } catch (err) {
       setError(err.message || 'Unable to place the order.');
     } finally {
-      setShowUpiModal(false);
+      setSubmitting(false);
+    }
+  };
+
+  // Razorpay online payment handler for UPI / Card
+  const handleOnlinePayment = async () => {
+    setSubmitting(true);
+    setError('');
+
+    try {
+      // Resolve table
+      const { data: tableRecord, error: tableError } = await supabase
+        .from('tables')
+        .select('id')
+        .eq('table_code', selectedTableId)
+        .maybeSingle();
+
+      if (tableError) throw new Error(tableError.message);
+      if (!tableRecord) throw new Error('Table not found — please scan the QR code again.');
+
+      const finalCustomerName = customerDetails.name?.trim() || 'Guest';
+      const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+      const taxAmount = parseFloat((subtotal * 0.08).toFixed(2));
+      const serviceCharge = parseFloat((subtotal * 0.02).toFixed(2));
+      const totalAmount = parseFloat((subtotal + taxAmount + serviceCharge).toFixed(2));
+
+      // Create Razorpay order via backend
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+      const orderRes = await fetch(`${backendUrl}/create-order`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: totalAmount }),
+      });
+
+      if (!orderRes.ok) {
+        const errBody = await orderRes.json().catch(() => ({}));
+        throw new Error(errBody.error || `Payment server error (${orderRes.status})`);
+      }
+
+      const razorpayOrder = await orderRes.json();
+
+      const paymentMethodMap = { cash: 'cash', card: 'card', upi: 'upi_qr' };
+
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+        amount: razorpayOrder.amount,
+        currency: razorpayOrder.currency || 'INR',
+        order_id: razorpayOrder.id,
+        name: 'Restaurant POS',
+        description: `Table ${selectedTableId} · ${cartItems.length} items`,
+        prefill: {
+          name: finalCustomerName,
+          email: customerEmail || undefined,
+          contact: customerDetails.phone || undefined,
+        },
+        theme: { color: '#E11D48' },
+        handler: async (response) => {
+          try {
+            // Insert order as PAID
+            const { data: newOrder, error: orderError } = await supabase
+              .from('orders')
+              .insert({
+                table_id: tableRecord.id,
+                customer_name: finalCustomerName,
+                payment_method: paymentMethodMap[paymentMethod] ?? 'upi_qr',
+                payment_status: 'paid',
+                status: 'pending',
+                tax: taxAmount,
+                service_charge: serviceCharge,
+                total: totalAmount,
+              })
+              .select()
+              .maybeSingle();
+
+            if (orderError) throw new Error(orderError.message);
+            if (!newOrder) throw new Error('Order creation failed.');
+
+            // Insert order items
+            const { error: itemsError } = await supabase.from('order_items').insert(
+              cartItems.map((item) => ({
+                order_id: newOrder.id,
+                menu_item_id: item.id,
+                quantity: item.quantity,
+                price: item.price,
+                unit_price: item.price,
+                line_total: parseFloat((item.price * item.quantity).toFixed(2)),
+                notes: item.preferences?.join(', ') || null,
+              })),
+            );
+
+            if (itemsError) throw new Error(itemsError.message);
+
+            // Mark table occupied
+            await supabase.from('tables').update({ status: 'occupied' }).eq('id', tableRecord.id);
+
+            // Generate receipts
+            const completedOrder = {
+              id: newOrder.id,
+              items: cartItems.map((item) => ({
+                id: item.id,
+                name: item.name,
+                quantity: item.quantity,
+                price: item.price,
+                preferences: item.preferences ?? [],
+              })),
+              tableId: selectedTableId,
+              customer: { name: finalCustomerName, phone: customerDetails.phone },
+              customerEmail,
+              subtotal,
+              taxAmount,
+              serviceCharge,
+              total: totalAmount,
+              paymentMethod: paymentLabel,
+              paymentId: response.razorpay_payment_id,
+              estimatedPrepMinutes: Math.max(12, cartItems.length * 6),
+              ticketGeneratedAt: new Date().toISOString(),
+            };
+
+            downloadTicketPDF(completedOrder);
+            generateOrderPDF(completedOrder);
+            sendOrderEmail(completedOrder, customerEmail).catch(() => {});
+
+            sessionStorage.setItem('last_order_id', newOrder.id);
+            clearCart();
+            navigate(`/order-success/${newOrder.id}`, {
+              replace: true,
+              state: { order: completedOrder, showToast: true },
+            });
+          } catch (err) {
+            setError(err.message || 'Payment succeeded but order creation failed.');
+          } finally {
+            setSubmitting(false);
+          }
+        },
+        modal: {
+          ondismiss: () => {
+            setSubmitting(false);
+          },
+        },
+      };
+
+      const rzp = new Razorpay(options);
+      rzp.on('payment.failed', (resp) => {
+        setError(resp.error?.description || 'Payment failed. Please try again.');
+        setSubmitting(false);
+      });
+      rzp.open();
+    } catch (err) {
+      setError(err.message || 'Unable to start payment.');
       setSubmitting(false);
     }
   };
@@ -250,12 +399,7 @@ export default function Checkout() {
                   <button
                     key={method.id}
                     type="button"
-                    onClick={() => {
-                      setPaymentMethod(method.id);
-                      if (method.id === 'upi') {
-                        setShowUpiModal(true);
-                      }
-                    }}
+                    onClick={() => setPaymentMethod(method.id)}
                     className={`rounded-xl border p-4 text-left transition-all duration-200 ${paymentMethod === method.id ? 'border-primary/30 bg-primary/10 text-white ring-1 ring-primary/20' : 'border-white/[0.06] bg-white/[0.02] text-slate-400 hover:bg-white/[0.04] hover:text-white'}`}
                   >
                     <p className="text-sm font-medium">{method.title}</p>
@@ -276,7 +420,7 @@ export default function Checkout() {
                 disabled={submitting || !cartItems.length || !selectedTableId}
                 onClick={() => void (paymentMethod === 'cash' ? submitOrder() : handleOnlinePayment())}
               >
-                {submitting ? 'Placing order...' : 'Place order'}
+                {submitting ? 'Processing...' : paymentMethod === 'cash' ? 'Place order' : 'Pay & place order'}
               </Button>
             </div>
           </div>
@@ -325,21 +469,6 @@ export default function Checkout() {
         </div>
       </div>
 
-      {showUpiModal ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 px-6 backdrop-blur-xl animate-fade-in">
-          <div className="w-full max-w-md glass-card p-6">
-            <h2 className="font-display text-xl font-bold text-white">UPI QR payment</h2>
-            <p className="mt-2 text-sm text-slate-400">Scan the QR code below, finish the payment, then confirm to create the order.</p>
-            <div className="mt-5 flex items-center justify-center rounded-xl border border-white/[0.06] bg-surface p-6">
-              <img src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=Cafe-POS-UPI" alt="UPI QR" className="h-52 w-52 rounded-lg bg-white p-3" />
-            </div>
-            <div className="mt-5 flex justify-end gap-2">
-              <Button variant="outline" size="sm" onClick={() => setShowUpiModal(false)}>Cancel</Button>
-              <Button size="sm" disabled={submitting} onClick={() => void submitOrder()}>I have paid</Button>
-            </div>
-          </div>
-        </div>
-      ) : null}
     </div>
   );
 }

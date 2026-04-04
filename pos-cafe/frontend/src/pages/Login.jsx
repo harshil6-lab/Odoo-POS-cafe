@@ -78,11 +78,11 @@ function Login() {
       // Redirect based on role
       const redirectMap = {
         manager: '/dashboard',
-        waiter: '/register',
-        cashier: '/billing',
+        waiter: '/tables',
+        cashier: '/tables',
         chef: '/kitchen',
         admin: '/dashboard',
-        kitchen: '/kitchen',  // Handle legacy 'kitchen' role
+        kitchen: '/kitchen',
       };
 
       const redirectPath = redirectMap[userRole] || '/menu';
