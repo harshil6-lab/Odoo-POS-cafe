@@ -97,12 +97,7 @@ export const authService = {
   async getUserRole(userId) {
     const { data, error } = await supabase
       .from('users')
-      .select(`
-        role_id,
-        roles (
-          name
-        )
-      `)
+      .select('role')
       .eq('id', userId)
       .maybeSingle();
 
@@ -113,7 +108,7 @@ export const authService = {
 
     console.log('Role fetch result:', data);
 
-    return data?.roles?.name ?? null;
+    return data?.role ?? null;
   },
 
   async getRoleProfile(userId) {
@@ -124,10 +119,7 @@ export const authService = {
         full_name,
         email,
         created_at,
-        role_id,
-        roles (
-          name
-        )
+        role
       `)
       .eq('id', userId)
       .maybeSingle();
@@ -145,8 +137,7 @@ export const authService = {
       full_name: data.full_name || null,
       email: data.email,
       created_at: data.created_at,
-      role: String(data.roles?.name || '').toLowerCase(),
-      role_id: data.role_id ?? null,
+      role: String(data.role || '').toLowerCase(),
     };
   },
 

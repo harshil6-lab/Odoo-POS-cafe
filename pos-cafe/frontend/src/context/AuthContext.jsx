@@ -1,13 +1,14 @@
 import { createContext, useContext, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { authService } from '../services/authService';
 import { supabase } from '../services/supabaseClient';
 import { getRedirectPathForRole, getRoleBadgeLabel } from '../utils/roleNavigation';
 
 const AuthContext = createContext(null);
 
-export function AuthProvider({ children }) {
+export const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [session, setSession] = useState(null);
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
@@ -17,51 +18,71 @@ export function AuthProvider({ children }) {
   const fetchUserRole = async (userId) => {
     const { data, error } = await supabase
       .from('users')
-      .select(`
-        id,
-        roles (
-          name
-        )
-      `)
+      .select('role')
       .eq('id', userId)
       .single();
 
-    if (error) {
-      console.error('Role fetch failed:', error);
-      return null;
-    }
+    if (error || !data) return null;
 
-    return data?.roles?.name ?? null;
+    return data.role ?? null;
   };
 
   useEffect(() => {
     const restoreSession = async () => {
-      const { data } = await supabase.auth.getSession();
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
-      if (!data.session) {
+      if (sessionError || !session) {
         setLoading(false);
         return;
       }
 
-      const role = await fetchUserRole(data.session.user.id);
+      // Validate the refresh token is still usable — prevents "Invalid Refresh Token" loop
+      const { error: refreshError } = await supabase.auth.refreshSession();
+      if (refreshError) {
+        console.warn('Stale session cleared:', refreshError.message);
+        await supabase.auth.signOut();
+        setLoading(false);
+        return;
+      }
 
-      setSession(data.session);
-      setUser(data.session.user);
+      const role = await fetchUserRole(session.user.id);
+
+      setSession(session);
+      setUser(session.user);
       setRole(role);
       setLoading(false);
+
+      // QR customers have a table_code in sessionStorage — skip staff redirect
+      if (sessionStorage.getItem('table_code')) return;
+
+      // Login page handles its own redirect after credentials are entered
+      if (location.pathname === '/login') return;
 
       if (!role) return;
 
       if (role === 'manager') navigate('/dashboard');
-      if (role === 'waiter') navigate('/register');
-      if (role === 'cashier') navigate('/billing');
+      else if (role === 'waiter') navigate('/register');
+      else if (role === 'cashier') navigate('/billing');
+      else if (role === 'chef') navigate('/kitchen');
+      else navigate('/menu');
     };
 
     restoreSession();
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, nextSession) => {
+    } = supabase.auth.onAuthStateChange(async (event, nextSession) => {
+      // Stale token — clean up instead of looping
+      if (event === 'TOKEN_REFRESHED' && !nextSession) {
+        await supabase.auth.signOut();
+        setSession(null);
+        setUser(null);
+        setRole(null);
+        setProfile(null);
+        setLoading(false);
+        return;
+      }
+
       if (!nextSession?.user) {
         setSession(null);
         setUser(null);
@@ -107,7 +128,8 @@ export function AuthProvider({ children }) {
     setUser(data.user);
     setRole(role);
 
-    return { redirectTo: role === 'manager' ? '/dashboard' : role === 'waiter' ? '/register' : '/billing' };
+    const redirectMap = { manager: '/dashboard', waiter: '/register', cashier: '/billing', chef: '/kitchen' };
+    return { redirectTo: redirectMap[role] || '/menu' };
   };
 
   const signup = async (payload) => {
@@ -155,9 +177,9 @@ export function AuthProvider({ children }) {
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}
+};
 
-export function useAuth() {
+export const useAuth = () => {
   const context = useContext(AuthContext);
 
   if (!context) {
@@ -165,4 +187,4 @@ export function useAuth() {
   }
 
   return context;
-}
+};

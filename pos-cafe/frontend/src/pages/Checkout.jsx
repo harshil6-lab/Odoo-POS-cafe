@@ -1,9 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { useAppState } from '../context/AppStateContext';
 import { downloadTicketPDF } from '../utils/generateTicketPDF';
+import { generateOrderPDF } from '../utils/generateOrderPDF';
+import { sendOrderEmail } from '../utils/sendOrderEmail';
 import { formatCurrency } from '../utils/helpers';
 
 const paymentMethods = [
@@ -14,25 +16,34 @@ const paymentMethods = [
 
 export default function Checkout() {
   const navigate = useNavigate();
-  const { cartItems, customerDetails, selectedTableId, totals, placeOrder } = useAppState();
+  const { cartItems, customerDetails, setCustomerDetails, selectedTableId, totals, placeOrder } = useAppState();
   const [paymentMethod, setPaymentMethod] = useState('cash');
+  const [customerEmail, setCustomerEmail] = useState('');
   const [showUpiModal, setShowUpiModal] = useState(false);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   const paymentLabel = useMemo(() => paymentMethods.find((item) => item.id === paymentMethod)?.title || 'Cash', [paymentMethod]);
 
+  // Auto-set guest name for QR customer flow
+  useEffect(() => {
+    if (sessionStorage.getItem('table_code') && !customerDetails.name) {
+      setCustomerDetails({ name: 'Guest' });
+    }
+  }, []);
+
   const submitOrder = async () => {
     setSubmitting(true);
 
     try {
-      const order = await placeOrder({ paymentMethod: paymentLabel, releaseTable: true });
+      const order = await placeOrder({ paymentMethod: paymentLabel, releaseTable: true, customerEmail });
       const completedOrder = {
         ...order,
         customer: {
           name: customerDetails.name,
           phone: customerDetails.phone,
         },
+        customerEmail,
         subtotal: totals.subtotal,
         taxAmount: totals.taxAmount,
         serviceCharge: totals.serviceCharge,
@@ -43,6 +54,11 @@ export default function Checkout() {
       };
 
       downloadTicketPDF(completedOrder);
+      generateOrderPDF(completedOrder);
+
+      // Send receipt email (non-blocking)
+      sendOrderEmail(completedOrder, customerEmail).catch(() => {});
+
       setError('');
       navigate('/thank-you', { replace: true, state: { order: completedOrder } });
     } catch (err) {
@@ -65,8 +81,22 @@ export default function Checkout() {
               <p className="text-sm text-[#9CA3AF]">Table number</p>
               <p className="mt-2 text-base font-medium text-[#F9FAFB]">{selectedTableId ? `Table ${selectedTableId}` : 'No table selected'}</p>
               <p className="mt-4 text-sm text-[#9CA3AF]">Customer name</p>
-              <p className="mt-2 text-base font-medium text-[#F9FAFB]">{customerDetails.name || 'Guest name missing'}</p>
+              <p className="mt-2 text-base font-medium text-[#F9FAFB]">{customerDetails.name || 'Guest'}</p>
               {customerDetails.phone ? <p className="mt-1 text-sm text-[#9CA3AF]">{customerDetails.phone}</p> : null}
+            </div>
+
+            <div className="rounded-xl border border-[#374151] bg-[#0B1220] p-6">
+              <label className="grid gap-2 text-sm font-medium text-[#F9FAFB]">
+                Email for receipt (optional)
+                <input
+                  type="email"
+                  value={customerEmail}
+                  onChange={(e) => setCustomerEmail(e.target.value)}
+                  placeholder="customer@email.com"
+                  className="h-11 rounded-xl border border-[#374151] bg-[#111827] px-4 text-sm text-[#F9FAFB] placeholder:text-[#9CA3AF] focus:border-[#F59E0B] focus:outline-none"
+                />
+              </label>
+              <p className="mt-2 text-sm text-[#9CA3AF]">We will email your order receipt and PDF to this address.</p>
             </div>
 
             <div className="rounded-xl border border-[#374151] bg-[#0B1220] p-6">

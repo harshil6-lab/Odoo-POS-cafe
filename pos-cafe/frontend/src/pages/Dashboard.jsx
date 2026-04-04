@@ -47,10 +47,10 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-xl border border-[#374151] bg-[#111827] p-4 shadow-sm">
-        <p className="text-sm text-slate-400">Dashboard</p>
-        <h1 className="mt-2 text-2xl font-semibold text-[#F9FAFB]">Welcome back, {displayName}</h1>
-        <p className="mt-3 text-sm text-slate-400">
+      <div className="rounded-xl border border-slate-800 bg-card p-4 shadow-md">
+        <p className="text-sm text-text-secondary">Dashboard</p>
+        <h1 className="mt-2 text-2xl font-semibold text-white">Welcome back, {displayName}</h1>
+        <p className="mt-3 text-sm text-text-secondary">
           Keep an eye on floor activity, kitchen flow, and the latest Supabase orders from one place.
         </p>
       </div>
@@ -59,15 +59,15 @@ export default function Dashboard() {
         {metrics.map((metric, index) => {
           const Icon = icons[index];
           return (
-            <Card key={metric.label} className="rounded-xl border-[#374151] bg-[#111827] shadow-sm">
+            <Card key={metric.label} className="rounded-xl border-slate-800 bg-card shadow-md transition-shadow hover:shadow-xl">
               <CardContent className="p-4">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="text-sm text-slate-400">{metric.label}</p>
-                    <p className="mt-3 text-3xl font-semibold text-[#F9FAFB]">{metric.value}</p>
-                    <p className="mt-2 text-sm text-slate-400">{metric.meta}</p>
+                    <p className="text-sm text-text-secondary">{metric.label}</p>
+                    <p className="mt-3 text-3xl font-semibold text-white">{metric.value}</p>
+                    <p className="mt-2 text-sm text-text-secondary">{metric.meta}</p>
                   </div>
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-[#374151] bg-[#1F2937] text-[#F59E0B]">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-slate-800 bg-slate-800 text-accent">
                     <Icon className="h-5 w-5" />
                   </div>
                 </div>
@@ -78,9 +78,9 @@ export default function Dashboard() {
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr),minmax(0,0.8fr)]">
-        <Card className="rounded-xl border-[#374151] bg-[#111827] shadow-sm">
+        <Card className="rounded-xl border-slate-800 bg-card shadow-md transition-shadow hover:shadow-xl">
           <CardHeader className="p-4">
-            <CardTitle className="text-2xl font-semibold text-[#F9FAFB]">Table overview</CardTitle>
+            <CardTitle className="text-2xl font-semibold text-white">Table overview</CardTitle>
           </CardHeader>
           <CardContent className="p-4 pt-0">
             <TableGrid tables={tables} compact emptyMessage="No live table records were returned from Supabase." />
@@ -88,16 +88,16 @@ export default function Dashboard() {
         </Card>
 
         <div className="space-y-6">
-          <Card className="rounded-xl border-[#374151] bg-[#111827] shadow-sm">
+          <Card className="rounded-xl border-slate-800 bg-card shadow-md transition-shadow hover:shadow-xl">
             <CardHeader className="p-4">
-              <CardTitle className="text-2xl font-semibold text-[#F9FAFB]">Upcoming reservations</CardTitle>
+              <CardTitle className="text-2xl font-semibold text-white">Upcoming reservations</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 p-4 pt-0">
               {reservations.length ? reservations.slice(0, 4).map((reservation) => (
-                <div key={reservation.id} className="rounded-xl border border-[#374151] bg-[#1F2937] p-4 shadow-sm">
-                  <p className="text-base font-medium text-[#F9FAFB]">{reservation.tableId}</p>
-                  <p className="mt-2 text-sm text-slate-400">{reservation.name} · {reservation.guests} guests</p>
-                  <p className="mt-1 text-sm text-slate-400">{reservation.date} · {reservation.time}</p>
+                <div key={reservation.id} className="rounded-xl border border-slate-800 bg-slate-800 p-4 shadow-sm">
+                  <p className="text-base font-medium text-white">{reservation.tableId}</p>
+                  <p className="mt-2 text-sm text-text-secondary">{reservation.name} · {reservation.guests} guests</p>
+                  <p className="mt-1 text-sm text-text-secondary">{reservation.date} · {reservation.time}</p>
                 </div>
               )) : <p className="text-sm text-slate-400">No reservations have been created yet.</p>}
             </CardContent>

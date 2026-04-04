@@ -53,7 +53,10 @@ export default function Register() {
 
   const categories = useMemo(() => ['All', ...catalogCategories.map((category) => category.name)], [catalogCategories]);
   const activeTable = tables.find((table) => table.id === selectedTableId) || null;
-  const activeTableOrders = useMemo(() => liveOrders.filter((order) => order.tableId === selectedTableId), [liveOrders, selectedTableId]);
+  const activeStatuses = ['pending', 'preparing', 'cooking', 'ready'];
+  const activeTableOrders = useMemo(() => liveOrders.filter((order) => order.tableId === selectedTableId && activeStatuses.includes(order.status)), [liveOrders, selectedTableId]);
+  const tableHasActiveOrder = activeTableOrders.length > 0;
+  const activeOrderTotal = useMemo(() => activeTableOrders.reduce((sum, order) => sum + order.total, 0), [activeTableOrders]);
   const filteredItems = useMemo(
     () =>
       catalogItems.filter((item) => {
@@ -113,11 +116,11 @@ export default function Register() {
               <p className="mt-1 text-sm text-slate-400">Active table</p>
             </div>
             <div className="rounded-xl border border-[#374151] bg-[#0B1220] px-4 py-4">
-              <p className="text-2xl font-semibold text-[#F9FAFB]">{liveOrders.length}</p>
-              <p className="mt-1 text-sm text-slate-400">Live orders</p>
+              <p className="text-2xl font-semibold text-[#F9FAFB]">{activeTableOrders.length}</p>
+              <p className="mt-1 text-sm text-slate-400">Table orders</p>
             </div>
             <div className="rounded-xl border border-[#374151] bg-[#0B1220] px-4 py-4">
-              <p className="text-2xl font-semibold text-[#F9FAFB]">{formatCurrency(totals.total)}</p>
+              <p className="text-2xl font-semibold text-[#F9FAFB]">{formatCurrency(activeOrderTotal + totals.total)}</p>
               <p className="mt-1 text-sm text-slate-400">Current order value</p>
             </div>
           </div>
@@ -278,7 +281,12 @@ export default function Register() {
             </div>
 
             <div className="grid gap-3">
-              <Button className="h-11 rounded-xl border-[#F59E0B] bg-[#F59E0B] text-sm text-[#0B1220] hover:bg-[#D97706]" disabled={placingOrder || !selectedTableId || !cartItems.length} onClick={() => void handleSubmitOrder()}>
+              {tableHasActiveOrder ? (
+                <p className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-center text-sm text-amber-300">
+                  This table already has an active order. Complete or serve it before placing a new one.
+                </p>
+              ) : null}
+              <Button className="h-11 rounded-xl border-[#F59E0B] bg-[#F59E0B] text-sm text-[#0B1220] hover:bg-[#D97706]" disabled={placingOrder || !selectedTableId || !cartItems.length || tableHasActiveOrder} onClick={() => void handleSubmitOrder()}>
                 {placingOrder ? 'Sending to billing...' : 'Send order to billing'}
               </Button>
               <Button variant="outline" className="h-11 rounded-xl border-[#374151] bg-[#1F2937] text-sm text-[#F9FAFB] hover:bg-[#111827]" disabled={!cartItems.length} onClick={clearCart}>

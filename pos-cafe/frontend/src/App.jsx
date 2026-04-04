@@ -23,10 +23,14 @@ import Register from "./pages/Register"
 import Billing from "./pages/Billing"
 import Kitchen from "./pages/Kitchen"
 import CustomerDisplay from "./pages/CustomerDisplay"
+import StaffManagement from "./pages/StaffManagement"
+import MenuEditor from "./pages/MenuEditor"
+import ReservationsAdmin from "./pages/ReservationsAdmin"
 import ProtectedRoute from "./components/ProtectedRoute"
 
 function App() {
   return (
+    <div className="relative z-0">
     <Routes>
       <Route path="/table/:table_code" element={<TableEntry />} />
 
@@ -53,12 +57,15 @@ function App() {
       <Route element={<ProtectedRoute />}>
         <Route element={<DashboardLayout />}>
           <Route path="/dashboard" element={<ProtectedRoute allowedRoles={['manager']}><Dashboard /></ProtectedRoute>} />
-          <Route path="/register" element={<ProtectedRoute allowedRoles={['waiter']}><Register /></ProtectedRoute>} />
-          <Route path="/billing" element={<ProtectedRoute allowedRoles={['cashier']}><Billing /></ProtectedRoute>} />
-          <Route path="/kitchen" element={<ProtectedRoute allowedRoles={['manager', 'waiter']}><Kitchen /></ProtectedRoute>} />
-          <Route path="/tables" element={<ProtectedRoute allowedRoles={['manager', 'waiter']}><FloorLayout /></ProtectedRoute>} />
+          <Route path="/register" element={<ProtectedRoute allowedRoles={['manager', 'waiter', 'cashier']}><Register /></ProtectedRoute>} />
+          <Route path="/billing" element={<ProtectedRoute allowedRoles={['manager', 'waiter', 'cashier']}><Billing /></ProtectedRoute>} />
+          <Route path="/kitchen" element={<ProtectedRoute allowedRoles={['manager', 'chef']}><Kitchen /></ProtectedRoute>} />
+          <Route path="/tables" element={<ProtectedRoute allowedRoles={['manager', 'waiter', 'cashier']}><FloorLayout /></ProtectedRoute>} />
           <Route path="/orders" element={<ProtectedRoute allowedRoles={['manager', 'waiter', 'cashier']}><Dashboard /></ProtectedRoute>} />
           <Route path="/reports" element={<ProtectedRoute allowedRoles={['manager']}><Dashboard /></ProtectedRoute>} />
+          <Route path="/staff" element={<ProtectedRoute allowedRoles={['manager']}><StaffManagement /></ProtectedRoute>} />
+          <Route path="/menu-editor" element={<ProtectedRoute allowedRoles={['manager']}><MenuEditor /></ProtectedRoute>} />
+          <Route path="/reservations" element={<ProtectedRoute allowedRoles={['manager']}><ReservationsAdmin /></ProtectedRoute>} />
         </Route>
       </Route>
 
@@ -76,6 +83,7 @@ function App() {
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </div>
   )
 }
 

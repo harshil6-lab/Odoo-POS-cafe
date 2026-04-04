@@ -7,55 +7,16 @@
 @tailwind utilities;
 
 @layer base {
-  :root {
-    --background: 218 45% 8%;
-    --foreground: 220 33% 96%;
-
-    --card: 220 34% 14%;
-    --card-foreground: 220 33% 96%;
-
-    --popover: 220 34% 14%;
-    --popover-foreground: 220 33% 96%;
-
-    --primary: 38 92% 50%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 172 66% 50%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-
-    --muted: 217 28% 20%;
-    --muted-foreground: 215 16% 68%;
-
-    --accent: 217 28% 20%;
-    --accent-foreground: 220 33% 96%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 220 20% 24%;
-    --input: 220 20% 24%;
-    --ring: 38 92% 50%;
-
-    color-scheme: dark;
-  }
-}
-
-@layer base {
-  * {
-    border-color: hsl(var(--border));
-  }
-
-  html,
-  body,
-  #root {
+  body {
+    @apply bg-background text-white;
+    font-family: 'Inter Variable', system-ui, -apple-system, sans-serif;
+    text-rendering: optimizeLegibility;
     overflow-x: hidden;
   }
 
-  body {
-    background: #0b1220;
-    color: #f8fafc;
-    font-family: 'Inter Variable', system-ui, -apple-system, sans-serif;
-    text-rendering: optimizeLegibility;
+  html,
+  #root {
+    overflow-x: hidden;
   }
 
   h1,
@@ -69,7 +30,7 @@
   }
 
   ::selection {
-    background: rgba(245, 158, 11, 0.3);
+    background: rgba(239, 79, 95, 0.3);
     color: #ffffff;
   }
 }
@@ -85,42 +46,5 @@
 
   .cards-gap {
     @apply gap-10;
-  }
-
-  .glass-panel {
-    @apply border border-white/10 bg-slate-900/70 shadow-xl backdrop-blur-xl;
-  }
-  
-  .dark-card {
-    @apply rounded-3xl border border-white/10 bg-slate-900 shadow-xl transition-all hover:bg-slate-800;
-  }
-
-  .premium-gradient-text {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-amber-400 to-amber-200;
-  }
-
-  .section-kicker {
-    @apply text-sm font-medium text-amber-400;
-  }
-
-  .section-heading {
-    @apply font-display text-4xl font-semibold leading-tight text-white md:text-5xl;
-  }
-
-  .section-body {
-    @apply text-base leading-8 text-slate-400 md:text-lg;
-  }
-}
-
-@layer utilities {
-  .surface-card {
-    background: #111827;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 24px 60px rgba(2, 6, 23, 0.38);
-  }
-
-  .surface-elevated {
-    background: #1f2937;
-    border: 1px solid rgba(255, 255, 255, 0.08);
   }
 }

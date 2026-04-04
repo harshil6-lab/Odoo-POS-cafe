@@ -70,8 +70,8 @@ export default function RegisterLayout() {
   };
 
   return (
-    <div className="grid min-h-[calc(100vh-11rem)] gap-5 md:grid-cols-2 xl:grid-cols-[30%_50%_20%]">
-      <div className="min-h-0 overflow-hidden">
+    <div className="grid min-h-[calc(100vh-11rem)] gap-5 xl:grid-cols-[30%_1fr_20%]">
+      <div className="min-h-0 overflow-hidden xl:col-span-1">
         <CartPanel
           cartItems={cart}
           guestCount={guestCount}
@@ -88,20 +88,20 @@ export default function RegisterLayout() {
         />
       </div>
 
-      <section className="min-w-0 overflow-hidden rounded-[28px] border border-white/10 bg-[#111827] shadow-[0_24px_60px_rgba(2,6,23,0.38)]">
-        <div className="flex flex-col gap-4 border-b border-white/10 p-5">
+      <section className="min-w-0 overflow-hidden rounded-xl border border-slate-800 bg-card shadow-md xl:col-span-1">
+        <div className="flex flex-col gap-4 border-b border-slate-800 p-5">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <p className="text-sm font-medium text-slate-400">Register</p>
-              <h1 className="mt-1 text-2xl font-semibold text-slate-100">Restaurant register</h1>
+              <p className="text-sm font-medium text-text-secondary">Register</p>
+              <h1 className="mt-1 text-2xl font-semibold text-white">Restaurant register</h1>
             </div>
-            <div className="rounded-full border border-white/10 bg-[#0B1220] px-4 py-2 text-sm font-medium text-slate-300">
+            <div className="rounded-full border border-slate-800 bg-background px-4 py-2 text-sm font-medium text-text-secondary">
               Counter 03
             </div>
           </div>
 
           <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-secondary" />
             <Input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
@@ -116,7 +116,7 @@ export default function RegisterLayout() {
         <ProductGrid products={filteredProducts} onAdd={addToCart} />
       </section>
 
-      <div className="min-h-0 md:col-span-2 xl:col-span-1">
+      <div className="min-h-0 xl:col-span-1">
         <Keypad activeMode={activeMode} onModeChange={handleModeChange} />
       </div>
     </div>

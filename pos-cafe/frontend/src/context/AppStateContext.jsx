@@ -104,33 +104,50 @@ export function AppStateProvider({ children }) {
     let active = true;
 
     const loadPublicData = async () => {
-      const [menuData, categoryData, tableData, reservationData] = await Promise.all([
+      console.log('Supabase URL:', import.meta.env.VITE_SUPABASE_URL);
+
+      const results = await Promise.allSettled([
         getMenuItems(),
         getCategories(),
         getTables(),
         getReservations(),
       ]);
 
-      if (!active) {
-        return;
+      if (!active) return;
+
+      const [menuResult, categoryResult, tableResult, reservationResult] = results;
+
+      if (menuResult.status === 'fulfilled') {
+        setCatalogItems(menuResult.value);
+      } else {
+        console.error('Menu fetch error:', menuResult.reason);
+        setCatalogItems([]);
       }
 
-      setCatalogItems(menuData);
-      setCatalogCategories(categoryData);
-      setTables(tableData);
-      setReservations(reservationData);
+      if (categoryResult.status === 'fulfilled') {
+        setCatalogCategories(categoryResult.value);
+      } else {
+        console.error('Categories fetch error:', categoryResult.reason);
+        setCatalogCategories([]);
+      }
+
+      if (tableResult.status === 'fulfilled') {
+        console.log('Tables loaded:', tableResult.value.length, 'records');
+        setTables(tableResult.value);
+      } else {
+        console.error('Tables fetch error:', tableResult.reason);
+        setTables([]);
+      }
+
+      if (reservationResult.status === 'fulfilled') {
+        setReservations(reservationResult.value);
+      } else {
+        console.error('Reservations fetch error:', reservationResult.reason);
+        setReservations([]);
+      }
     };
 
-    void loadPublicData().catch(() => {
-      if (!active) {
-        return;
-      }
-
-      setCatalogItems([]);
-      setCatalogCategories([]);
-      setTables([]);
-      setReservations([]);
-    });
+    void loadPublicData();
 
     return () => {
       active = false;
@@ -149,7 +166,7 @@ export function AppStateProvider({ children }) {
       }
 
       try {
-        const orders = await getOrders();
+        const orders = await getOrders({ statuses: ['pending', 'preparing', 'cooking', 'ready'] });
 
         if (active) {
           setLiveOrders(orders);
@@ -214,7 +231,7 @@ export function AppStateProvider({ children }) {
   }, []);
 
   const refreshOrders = useCallback(async () => {
-    const orders = await getOrders();
+    const orders = await getOrders({ statuses: ['pending', 'preparing', 'cooking', 'ready'] });
     setLiveOrders(orders);
     return orders;
   }, []);
@@ -292,8 +309,8 @@ export function AppStateProvider({ children }) {
   };
 
   const placeOrder = async ({ paymentMethod, releaseTable = false } = {}) => {
-    if (!selectedTableId || !customerDetails.name || !cartItems.length) {
-      throw new Error('Add a table, customer name, and at least one item before checkout.');
+    if (!selectedTableId || !cartItems.length) {
+      throw new Error('Add a table and at least one item before checkout.');
     }
 
     const matchedTable = tablesWithStatus.find((table) => table.id === selectedTableId);
@@ -302,10 +319,12 @@ export function AppStateProvider({ children }) {
       throw new Error('Select a valid table before placing the order.');
     }
 
+    const finalCustomerName = customerDetails.name?.trim() || 'Guest';
+
     const order = await createOrderWithItemsAndPayment({
       order: {
         table_id: matchedTable.dbId,
-        customer_name: customerDetails.name,
+        customer_name: finalCustomerName,
         payment_method: paymentMethod,
         status: 'pending',
       },
