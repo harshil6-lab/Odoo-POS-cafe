@@ -10,8 +10,8 @@ import { formatCurrency } from '../utils/helpers';
 
 const paymentMethods = [
   { id: 'cash', title: 'Cash', detail: 'Pay directly at the counter.' },
-  { id: 'card', title: 'Card', detail: 'Card payment collected by cashier.' },
-  { id: 'upi', title: 'UPI QR', detail: 'Scan the QR code and complete payment instantly.' },
+  { id: 'card', title: 'Card', detail: 'Pay securely via Razorpay.' },
+  { id: 'upi', title: 'UPI QR', detail: 'Pay via UPI through Razorpay.' },
 ];
 
 export default function Checkout() {
@@ -62,6 +62,82 @@ export default function Checkout() {
     }
   };
 
+  const handleOnlinePayment = async () => {
+    setSubmitting(true);
+    setError('');
+
+    try {
+      const res = await fetch('http://localhost:5000/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: totals.total }),
+      });
+
+      if (!res.ok) throw new Error('Failed to create payment order');
+
+      const data = await res.json();
+
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+        amount: data.amount,
+        currency: 'INR',
+        name: 'POS Cafe',
+        description: 'Order Payment',
+        order_id: data.id,
+        handler: async (response) => {
+          try {
+            const order = await placeOrder({
+              paymentMethod: paymentLabel,
+              releaseTable: true,
+              customerEmail,
+              paymentStatus: 'paid',
+              paymentId: response.razorpay_payment_id,
+            });
+
+            const completedOrder = {
+              ...order,
+              customer: {
+                name: customerDetails.name,
+                phone: customerDetails.phone,
+              },
+              customerEmail,
+              subtotal: totals.subtotal,
+              taxAmount: totals.taxAmount,
+              serviceCharge: totals.serviceCharge,
+              total: totals.total,
+              paymentMethod: paymentLabel,
+              estimatedPrepMinutes: Math.max(12, order.items.length * 6),
+              ticketGeneratedAt: new Date().toISOString(),
+            };
+
+            downloadTicketPDF(completedOrder);
+            generateOrderPDF(completedOrder);
+            sendOrderEmail(completedOrder, customerEmail).catch(() => {});
+
+            setError('');
+            navigate('/thank-you', { replace: true, state: { order: completedOrder } });
+          } catch (err) {
+            setError(err.message || 'Failed to place order after payment.');
+          } finally {
+            setSubmitting(false);
+          }
+        },
+        modal: {
+          ondismiss: () => {
+            setSubmitting(false);
+          },
+        },
+        theme: { color: '#EF4F5F' },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+    } catch (err) {
+      setError(err.message || 'Payment initiation failed.');
+      setSubmitting(false);
+    }
+  };
+
   return (
     <div className="bg-[#0B1220] py-20">
       <div className="mx-auto grid max-w-7xl gap-8 px-6 xl:grid-cols-[minmax(0,1fr),380px]">
@@ -99,12 +175,7 @@ export default function Checkout() {
                   <button
                     key={method.id}
                     type="button"
-                    onClick={() => {
-                      setPaymentMethod(method.id);
-                      if (method.id === 'upi') {
-                        setShowUpiModal(true);
-                      }
-                    }}
+                    onClick={() => setPaymentMethod(method.id)}
                     className={`rounded-xl border p-5 text-left transition ${paymentMethod === method.id ? 'border-[#F59E0B] bg-[#F59E0B]/10 text-[#F9FAFB]' : 'border-[#374151] bg-[#111827] text-[#F9FAFB] hover:bg-[#111827]'}`}
                   >
                     <p className="text-base font-medium">{method.title}</p>
@@ -123,7 +194,7 @@ export default function Checkout() {
               <Button
                 className="h-11 rounded-xl border-[#F59E0B] bg-[#F59E0B] px-5 text-sm text-[#0B1220] hover:bg-[#D97706]"
                 disabled={submitting || !cartItems.length || !selectedTableId}
-                onClick={() => void (paymentMethod === 'upi' ? Promise.resolve(setShowUpiModal(true)) : submitOrder())}
+                onClick={() => void (paymentMethod === 'cash' ? submitOrder() : handleOnlinePayment())}
               >
                 {submitting ? 'Placing order...' : 'Place order'}
               </Button>

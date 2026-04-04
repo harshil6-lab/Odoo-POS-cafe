@@ -308,7 +308,7 @@ export function AppStateProvider({ children }) {
     return createdReservation;
   };
 
-  const placeOrder = async ({ paymentMethod, releaseTable = false } = {}) => {
+  const placeOrder = async ({ paymentMethod, releaseTable = false, paymentStatus, paymentId } = {}) => {
     if (!selectedTableId || !customerDetails.name || !cartItems.length) {
       throw new Error('Add a table, customer name, and at least one item before checkout.');
     }
@@ -319,13 +319,23 @@ export function AppStateProvider({ children }) {
       throw new Error('Select a valid table before placing the order.');
     }
 
+    const orderPayload = {
+      table_id: matchedTable.dbId,
+      customer_name: customerDetails.name,
+      payment_method: paymentMethod,
+      status: 'pending',
+    };
+
+    if (paymentStatus) {
+      orderPayload.payment_status = paymentStatus;
+    }
+
+    if (paymentId) {
+      orderPayload.payment_id = paymentId;
+    }
+
     const order = await createOrderWithItemsAndPayment({
-      order: {
-        table_id: matchedTable.dbId,
-        customer_name: customerDetails.name,
-        payment_method: paymentMethod,
-        status: 'pending',
-      },
+      order: orderPayload,
       items: cartItems.map((item) => ({
         menu_item_id: item.id,
         quantity: item.quantity,
