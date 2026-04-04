@@ -68,6 +68,7 @@ function Signup() {
     }
 
     // Upsert profile so role is stored immediately
+    console.log('Selected role:', form.role);
     await supabase.from('users').upsert({
       id: userId,
       email: form.email,
