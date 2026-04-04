@@ -58,10 +58,15 @@ export async function updateMenuItemAvailability(menuItemId, isAvailable) {
     })
     .eq('id', menuItemId)
     .select(menuSelect)
-    .single();
+    .limit(1)
+    .maybeSingle();
 
   if (error) {
     throw error;
+  }
+
+  if (!data) {
+    throw new Error('Missing record');
   }
 
   return mapMenuItem(data);

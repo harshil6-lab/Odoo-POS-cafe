@@ -55,8 +55,6 @@ function Login() {
 
     const role = await fetchUserRole(data.user.id);
 
-    console.log('Fetched role:', role);
-
     if (!role) {
       setError('Only staff accounts can access this app.');
       setLoading(false);

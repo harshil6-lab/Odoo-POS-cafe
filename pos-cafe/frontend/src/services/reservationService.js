@@ -19,10 +19,14 @@ function mapReservation(record) {
 }
 
 export async function createReservation(payload) {
-  const { data, error } = await supabase.from('reservations').insert([payload]).select(reservationSelect).single();
+  const { data, error } = await supabase.from('reservations').insert([payload]).select(reservationSelect).limit(1).maybeSingle();
 
   if (error) {
     throw error;
+  }
+
+  if (!data) {
+    throw new Error('Missing record');
   }
 
   return mapReservation(data);

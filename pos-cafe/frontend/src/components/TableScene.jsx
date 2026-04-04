@@ -56,7 +56,14 @@ function SceneContent({ tables }) {
 
 export default function TableScene({ tables = [] }) {
   return (
-    <Canvas camera={{ position: [0, 4.5, 5.8], fov: 42 }} style={{ pointerEvents: 'none' }} shadows>
+    <Canvas
+      camera={{ position: [0, 4.5, 5.8], fov: 42 }}
+      dpr={[1, 1.5]}
+      frameloop="always"
+      gl={{ antialias: false, powerPreference: 'low-power' }}
+      style={{ pointerEvents: 'none' }}
+      shadows
+    >
       <SceneContent tables={tables} />
     </Canvas>
   );

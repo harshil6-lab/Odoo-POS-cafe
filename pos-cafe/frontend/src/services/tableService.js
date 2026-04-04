@@ -86,10 +86,15 @@ export async function updateTableStatus(tableIdentifier, status) {
     .update({ status: nextStatus, updated_at: new Date().toISOString() })
     .eq(column, tableIdentifier)
     .select(tableSelect)
-    .single();
+    .limit(1)
+    .maybeSingle();
 
   if (error) {
     throw error;
+  }
+
+  if (!data) {
+    throw new Error('Missing record');
   }
 
   return mapTableRecord(data);

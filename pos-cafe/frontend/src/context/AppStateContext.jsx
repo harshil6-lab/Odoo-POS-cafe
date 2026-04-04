@@ -105,8 +105,6 @@ export function AppStateProvider({ children }) {
     let active = true;
 
     const loadPublicData = async () => {
-      console.log('Supabase URL:', import.meta.env.VITE_SUPABASE_URL);
-
       const results = await Promise.allSettled([
         getMenuItems(),
         getCategories(),
@@ -133,7 +131,6 @@ export function AppStateProvider({ children }) {
       }
 
       if (tableResult.status === 'fulfilled') {
-        console.log('Tables loaded:', tableResult.value.length, 'records');
         setTables(tableResult.value);
       } else {
         console.error('Tables fetch error:', tableResult.reason);

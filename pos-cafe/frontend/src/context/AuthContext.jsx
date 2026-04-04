@@ -20,7 +20,8 @@ export const AuthProvider = ({ children }) => {
       .from('users')
       .select('role')
       .eq('id', userId)
-      .single();
+      .limit(1)
+      .maybeSingle();
 
     if (error || !data) return null;
 
@@ -116,8 +117,6 @@ export const AuthProvider = ({ children }) => {
     if (error) throw new Error(error.message);
 
     const role = await fetchUserRole(data.user.id);
-
-    console.log('Fetched role:', role);
 
     if (!role) {
       await supabase.auth.signOut();

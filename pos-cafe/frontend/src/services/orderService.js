@@ -49,20 +49,28 @@ function mapOrder(order) {
 }
 
 export async function getOrderById(orderId) {
-  const { data, error } = await supabase.from('orders').select(orderSelect).eq('id', orderId).single();
+  const { data, error } = await supabase.from('orders').select(orderSelect).eq('id', orderId).limit(1).maybeSingle();
 
   if (error) {
     throw error;
+  }
+
+  if (!data) {
+    throw new Error('Missing record');
   }
 
   return mapOrder(data);
 }
 
 export async function createOrder(payload) {
-  const { data, error } = await supabase.from('orders').insert([payload]).select('id').single();
+  const { data, error } = await supabase.from('orders').insert([payload]).select('id').limit(1).maybeSingle();
 
   if (error) {
     throw error;
+  }
+
+  if (!data) {
+    throw new Error('Missing record');
   }
 
   return data;
