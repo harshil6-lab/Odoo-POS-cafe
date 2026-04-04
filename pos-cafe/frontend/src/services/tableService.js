@@ -23,8 +23,6 @@ function mapTableRecord(record) {
     status: record.status,
     seats: record.seats,
     note: buildNote(record.table_code, floorName),
-    orderAmount: '₹0',
-    server: 'Service team',
   };
 }
 

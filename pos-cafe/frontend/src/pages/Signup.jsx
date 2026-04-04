@@ -75,7 +75,7 @@ function Signup() {
       panelDescription="Every signup creates a real auth user and a matching public.users profile. Roles are assigned separately for production-style staff access control."
       panelPoints={[
         'Signups create a real auth.users account and linked public.users profile.',
-        'Managers assign the final role from the roles table after account creation.',
+        'Selected staff role is written directly to the public.users role field after account creation.',
         'Users without a role are blocked from the staff workspace.',
       ]}
       footer={(

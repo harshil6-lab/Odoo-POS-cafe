@@ -150,11 +150,19 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
-    await authService.signOut();
-    setSession(null);
-    setUser(null);
-    setProfile(null);
-    setRole(null);
+    try {
+      await authService.signOut();
+    } finally {
+      if (typeof window !== 'undefined') {
+        window.sessionStorage.clear();
+      }
+
+      setSession(null);
+      setUser(null);
+      setProfile(null);
+      setRole(null);
+      navigate('/', { replace: true });
+    }
   };
 
   const displayName = profile?.full_name || user?.full_name || user?.email || 'Restaurant user';

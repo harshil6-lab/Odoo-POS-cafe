@@ -2,8 +2,8 @@ import { getTableStatusTone } from '../utils/helpers';
 
 const TABLE_DOT_STYLES = {
   available: 'bg-emerald-400',
-  occupied: 'bg-amber-400',
-  reserved: 'bg-violet-400',
+  occupied: 'bg-rose-400',
+  reserved: 'bg-yellow-400',
   cleaning: 'bg-slate-400',
 };
 

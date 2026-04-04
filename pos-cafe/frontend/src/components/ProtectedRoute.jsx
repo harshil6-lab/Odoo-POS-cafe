@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 
 function ProtectedRoute({ allowedRoles, children }) {
   const location = useLocation();
-  const { loading, session, role } = useAuth();
+  const { loading, redirectPath, session, role } = useAuth();
 
   if (loading) {
     return (
@@ -18,7 +18,7 @@ function ProtectedRoute({ allowedRoles, children }) {
   }
 
   if (allowedRoles?.length && (!role || !allowedRoles.includes(role))) {
-    return <Navigate to="/login" replace state={{ from: location }} />;
+    return <Navigate to={redirectPath || '/menu'} replace state={{ from: location }} />;
   }
 
   return children || <Outlet />;

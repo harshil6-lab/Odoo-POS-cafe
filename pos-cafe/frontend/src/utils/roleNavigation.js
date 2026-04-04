@@ -20,7 +20,7 @@ export const APP_NAV_LINKS = [
 
 export const rolePermissions = {
   manager: ['dashboard', 'tables', 'register', 'billing', 'kitchen', 'orders', 'reports', 'staff', 'menu-editor', 'reservations'],
-  waiter: ['tables', 'register', 'billing'],
+  waiter: ['tables', 'register'],
   cashier: ['tables', 'billing'],
   chef: ['kitchen'],
 };

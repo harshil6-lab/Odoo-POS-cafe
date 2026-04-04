@@ -4,6 +4,7 @@ import { calculateOrderTotals } from '../utils/helpers';
 import { getCategories, getMenuItems } from '../services/menuService';
 import { createOrderWithItemsAndPayment, getOrders, updateOrderStatus } from '../services/orderService';
 import { createReservation, getReservations } from '../services/reservationService';
+import { supabase } from '../services/supabaseClient';
 import { getTables, updateTableStatus } from '../services/tableService';
 
 const AppStateContext = createContext(null);
@@ -242,6 +243,27 @@ export function AppStateProvider({ children }) {
     return nextReservations;
   }, []);
 
+  useEffect(() => {
+    const tablesChannel = supabase
+      .channel('app-state-tables')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tables' }, () => {
+        void refreshTables();
+      })
+      .subscribe();
+
+    const reservationsChannel = supabase
+      .channel('app-state-reservations')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'reservations' }, () => {
+        void refreshReservations();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(tablesChannel);
+      supabase.removeChannel(reservationsChannel);
+    };
+  }, [refreshReservations, refreshTables]);
+
   const setSelectedTableId = (tableId) => {
     setSelectedTableIdState(tableId);
   };
@@ -348,7 +370,7 @@ export function AppStateProvider({ children }) {
     setLastPlacedOrder({
       ...order,
       customer: {
-        name: customerDetails.name,
+        name: finalCustomerName,
         phone: customerDetails.phone,
       },
       subtotal: totals.subtotal,

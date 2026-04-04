@@ -24,11 +24,18 @@ import Dashboard from "./pages/Dashboard"
 import Register from "./pages/Register"
 import Billing from "./pages/Billing"
 import Kitchen from "./pages/Kitchen"
+import Orders from "./pages/Orders"
+import Reports from "./pages/Reports"
+import Reservations from "./pages/Reservations"
+import Tables from "./pages/Tables"
 import CustomerDisplay from "./pages/CustomerDisplay"
 import StaffManagement from "./pages/StaffManagement"
 import MenuEditor from "./pages/MenuEditor"
-import ReservationsAdmin from "./pages/ReservationsAdmin"
+import CashierRoute from "./components/CashierRoute"
+import ChefRoute from "./components/ChefRoute"
+import ManagerRoute from "./components/ManagerRoute"
 import ProtectedRoute from "./components/ProtectedRoute"
+import WaiterRoute from "./components/WaiterRoute"
 
 function App() {
   return (
@@ -60,16 +67,16 @@ function App() {
 
       <Route element={<ProtectedRoute />}>
         <Route element={<DashboardLayout />}>
-          <Route path="/dashboard" element={<ProtectedRoute allowedRoles={['manager']}><Dashboard /></ProtectedRoute>} />
-          <Route path="/register" element={<ProtectedRoute allowedRoles={['manager', 'waiter', 'cashier']}><Register /></ProtectedRoute>} />
-          <Route path="/billing" element={<ProtectedRoute allowedRoles={['manager', 'waiter', 'cashier']}><Billing /></ProtectedRoute>} />
-          <Route path="/kitchen" element={<ProtectedRoute allowedRoles={['manager', 'chef']}><Kitchen /></ProtectedRoute>} />
-          <Route path="/tables" element={<ProtectedRoute allowedRoles={['manager', 'waiter', 'cashier']}><FloorLayout /></ProtectedRoute>} />
-          <Route path="/orders" element={<ProtectedRoute allowedRoles={['manager', 'waiter', 'cashier']}><Dashboard /></ProtectedRoute>} />
-          <Route path="/reports" element={<ProtectedRoute allowedRoles={['manager']}><Dashboard /></ProtectedRoute>} />
-          <Route path="/staff" element={<ProtectedRoute allowedRoles={['manager']}><StaffManagement /></ProtectedRoute>} />
-          <Route path="/menu-editor" element={<ProtectedRoute allowedRoles={['manager']}><MenuEditor /></ProtectedRoute>} />
-          <Route path="/reservations" element={<ProtectedRoute allowedRoles={['manager']}><ReservationsAdmin /></ProtectedRoute>} />
+          <Route path="/dashboard" element={<ManagerRoute><Dashboard /></ManagerRoute>} />
+          <Route path="/register" element={<WaiterRoute><Register /></WaiterRoute>} />
+          <Route path="/billing" element={<CashierRoute><Billing /></CashierRoute>} />
+          <Route path="/kitchen" element={<ChefRoute><Kitchen /></ChefRoute>} />
+          <Route path="/tables" element={<ProtectedRoute allowedRoles={['manager', 'waiter', 'cashier']}><Tables /></ProtectedRoute>} />
+          <Route path="/orders" element={<ManagerRoute><Orders /></ManagerRoute>} />
+          <Route path="/reports" element={<ManagerRoute><Reports /></ManagerRoute>} />
+          <Route path="/staff" element={<ManagerRoute><StaffManagement /></ManagerRoute>} />
+          <Route path="/menu-editor" element={<ManagerRoute><MenuEditor /></ManagerRoute>} />
+          <Route path="/reservations" element={<ManagerRoute><Reservations /></ManagerRoute>} />
         </Route>
       </Route>
 
