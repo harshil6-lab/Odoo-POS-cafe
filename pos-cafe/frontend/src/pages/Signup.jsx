@@ -11,7 +11,8 @@ const STAFF_ROLES = ['manager', 'waiter', 'cashier', 'chef'];
 function Signup() {
   const navigate = useNavigate();
   const { user, redirectPath, loading: authLoading } = useAuth();
-  const [form, setForm] = useState({ fullName: '', phone: '', email: '', password: '', role: 'waiter' });
+  const [form, setForm] = useState({ fullName: '', phone: '', email: '', password: '' });
+  const [selectedRole, setSelectedRole] = useState('manager');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -36,7 +37,7 @@ function Signup() {
     setError('');
     setSuccess('');
 
-    if (!form.role || !STAFF_ROLES.includes(form.role)) {
+    if (!selectedRole || !STAFF_ROLES.includes(selectedRole)) {
       setError('Please select a valid role: ' + STAFF_ROLES.join(', '));
       setLoading(false);
       return;
@@ -68,12 +69,12 @@ function Signup() {
     }
 
     // Upsert profile so role is stored immediately
-    console.log('Selected role:', form.role);
+    console.log('FINAL ROLE SENT:', selectedRole);
     await supabase.from('users').upsert({
       id: userId,
       email: form.email,
       full_name: form.fullName || 'Staff User',
-      role: form.role,
+      role: selectedRole,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     });
@@ -82,7 +83,8 @@ function Signup() {
     await supabase.auth.signOut();
 
     setSuccess('Account created! You can now sign in.');
-    setForm({ fullName: '', phone: '', email: '', password: '', role: 'waiter' });
+    setForm({ fullName: '', phone: '', email: '', password: '' });
+    setSelectedRole('manager');
     setLoading(false);
 
     setTimeout(() => {
@@ -151,14 +153,17 @@ function Signup() {
         <label className="grid gap-2 text-sm font-medium text-slate-300">
           Role
           <select
-            name="role"
-            value={form.role}
-            onChange={handleChange}
+            value={selectedRole}
+            onChange={(e) => {
+              console.log('Selected role:', e.target.value);
+              setSelectedRole(e.target.value);
+            }}
             className="h-11 w-full rounded-xl border border-white/[0.08] bg-surface px-4 text-sm text-white focus:border-primary/50 focus:outline-none"
           >
-            {STAFF_ROLES.map((r) => (
-              <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>
-            ))}
+            <option value="manager">Manager</option>
+            <option value="waiter">Waiter</option>
+            <option value="chef">Chef</option>
+            <option value="cashier">Cashier</option>
           </select>
         </label>
 
