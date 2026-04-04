@@ -42,15 +42,13 @@ function Signup() {
       return;
     }
 
-    // Only create auth account — profile is created on first login
+    // Only create auth account
     const { data, error: signUpError } = await supabase.auth.signUp({
       email: form.email,
       password: form.password,
       options: {
         data: {
           full_name: form.fullName,
-          phone: form.phone,
-          selected_role: form.role,
         },
       },
     });
@@ -61,11 +59,23 @@ function Signup() {
       return;
     }
 
-    if (!data.user) {
-      setError('Signup failed: No user created.');
+    const userId = data?.user?.id;
+
+    if (!userId) {
+      setError('Signup succeeded but user ID missing.');
       setLoading(false);
       return;
     }
+
+    // Upsert profile so role is stored immediately
+    await supabase.from('users').upsert({
+      id: userId,
+      email: form.email,
+      full_name: form.fullName || 'Staff User',
+      role: form.role,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    });
 
     // Sign out so user logs in fresh
     await supabase.auth.signOut();
