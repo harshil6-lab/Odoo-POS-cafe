@@ -90,7 +90,7 @@ export const AuthProvider = ({ children }) => {
       if (!role) return;
 
       if (role === 'manager') navigate('/dashboard');
-      else if (role === 'waiter') navigate('/register');
+      else if (role === 'waiter') navigate('/tables');
       else if (role === 'cashier') navigate('/billing');
       else if (role === 'chef') navigate('/kitchen');
       else navigate('/menu');
@@ -163,7 +163,7 @@ export const AuthProvider = ({ children }) => {
     // Calculate redirect path based on role
     const redirectMap = {
       manager: '/dashboard',
-      waiter: '/register',
+      waiter: '/tables',
       cashier: '/billing',
       chef: '/kitchen',
       admin: '/dashboard',

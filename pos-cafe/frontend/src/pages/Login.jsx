@@ -78,7 +78,7 @@ function Login() {
       // Redirect based on role
       const redirectMap = {
         manager: '/dashboard',
-        waiter: '/register',
+        waiter: '/tables',
         cashier: '/billing',
         chef: '/kitchen',
         admin: '/dashboard',

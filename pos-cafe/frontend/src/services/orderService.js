@@ -143,25 +143,15 @@ export async function createOrderWithItemsAndPayment({ order, items, payment }) 
 
   const orderPayload = {
     ...order,
-    subtotal: subtotal.toFixed(2),
-    tax_amount: taxAmount.toFixed(2),
-    service_charge: serviceCharge.toFixed(2),
-    total_amount: totalAmount.toFixed(2),
+    tax: parseFloat(taxAmount.toFixed(2)),
+    service_charge: parseFloat(serviceCharge.toFixed(2)),
+    total: parseFloat(totalAmount.toFixed(2)),
+    payment_status: 'pending',
+    payment_method: payment?.method || 'cash',
   };
 
   const createdOrder = await createOrder(orderPayload);
   await addOrderItems(createdOrder.id, items);
-
-  // Insert payment record if payment info provided
-  if (payment?.method) {
-    await supabase.from('payments').insert([{
-      order_id: createdOrder.id,
-      user_id: payment.user_id || null,
-      method: payment.method,
-      amount: totalAmount.toFixed(2),
-      status: 'completed',
-    }]);
-  }
 
   if (order.table_id) {
     await supabase.from('tables').update({ status: 'occupied' }).eq('id', order.table_id);

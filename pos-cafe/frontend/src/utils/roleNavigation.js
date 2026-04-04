@@ -50,7 +50,7 @@ export function getNavLinksForRole(role) {
 
 const redirectByRole = {
   customer: '/menu',
-  waiter: '/register',
+  waiter: '/tables',
   manager: '/dashboard',
   cashier: '/billing',
   chef: '/kitchen',

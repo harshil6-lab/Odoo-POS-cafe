@@ -90,8 +90,10 @@ export default function Register() {
     setError('');
 
     try {
-      await placeOrder({ paymentMethod, releaseTable: false });
-      navigate('/billing', { replace: true });
+      const order = await placeOrder({ paymentMethod, releaseTable: false });
+      // Redirect to billing for the specific table so cashier can complete payment
+      const tableDbId = tables.find((t) => t.id === selectedTableId)?.dbId;
+      navigate(tableDbId ? `/billing/${tableDbId}` : '/billing', { replace: true });
     } catch (err) {
       setError(err.message || 'Unable to send the order to billing.');
     } finally {
@@ -216,7 +218,7 @@ export default function Register() {
         </Card>
 
         {/* Cart / Order panel */}
-        <Card className="glass-card">
+        <Card className="glass-card sticky top-24 self-start">
           <CardHeader className="p-4">
             <CardTitle className="font-display text-base font-semibold">🛒 Current order</CardTitle>
           </CardHeader>
