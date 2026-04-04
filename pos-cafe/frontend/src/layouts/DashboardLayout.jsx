@@ -6,8 +6,10 @@ export default function DashboardLayout() {
   const location = useLocation();
   return (
     <div className="min-h-screen w-full max-w-screen overflow-x-hidden bg-background text-white">
-      <Navbar isDashboard />
-      <main className="h-[calc(100vh-4rem)] w-full overflow-hidden p-4">
+      <div className="relative z-50">
+        <Navbar isDashboard />
+      </div>
+      <main className="relative z-0 h-[calc(100vh-4rem)] w-full overflow-hidden p-4">
         <AnimatePresence mode="wait">
           <motion.div
             key={location.pathname}
