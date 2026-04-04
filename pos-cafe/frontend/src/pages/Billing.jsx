@@ -1,38 +1,108 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { useAppState } from '../context/AppStateContext';
 import { confirmPayment } from '../services/orderService';
 import { updateTableStatus } from '../services/tableService';
+import { supabase } from '../services/supabaseClient';
 import { downloadTicketPDF } from '../utils/generateTicketPDF';
 import { formatCurrency } from '../utils/helpers';
+
+const BILL_SELECT = `
+  id,
+  table_id,
+  customer_name,
+  status,
+  payment_status,
+  payment_method,
+  tax,
+  service_charge,
+  total,
+  created_at,
+  order_items(
+    id,
+    quantity,
+    price,
+    unit_price,
+    line_total,
+    menu_items(name)
+  ),
+  tables(
+    id,
+    table_code
+  )
+`;
+
+function mapBillOrder(raw) {
+  return {
+    id: raw.id,
+    tableId: raw.tables?.table_code ?? null,
+    tableDbId: raw.tables?.id ?? raw.table_id,
+    customer: { name: raw.customer_name || 'Guest' },
+    status: raw.status,
+    paymentStatus: raw.payment_status,
+    paymentMethod: raw.payment_method,
+    tax: Number(raw.tax) || 0,
+    serviceCharge: Number(raw.service_charge) || 0,
+    total: Number(raw.total) || 0,
+    createdAt: raw.created_at,
+    items: (raw.order_items ?? []).map((item) => ({
+      id: item.id,
+      name: item.menu_items?.name ?? 'Menu item',
+      quantity: Number(item.quantity),
+      price: Number(item.unit_price ?? item.price ?? 0),
+      lineTotal: Number(item.line_total) || 0,
+    })),
+  };
+}
 
 export default function Billing() {
   const { tableId: routeTableId } = useParams();
   const navigate = useNavigate();
   const { liveOrders, refreshOrders } = useAppState();
+  const [directOrders, setDirectOrders] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    void refreshOrders();
-  }, [refreshOrders]);
+  // When accessed via /billing/:tableId, fetch directly from Supabase
+  const loadTableBills = useCallback(async () => {
+    if (!routeTableId) return;
+    setLoading(true);
+    try {
+      const { data, error: fetchError } = await supabase
+        .from('orders')
+        .select(BILL_SELECT)
+        .eq('table_id', routeTableId)
+        .eq('payment_status', 'pending')
+        .order('created_at', { ascending: false });
 
-  // Cashier only sees cash orders with pending payment
-  // If accessed via /billing/:tableId, further filter to that table
-  const filteredOrders = useMemo(
-    () => {
-      let orders = liveOrders.filter((order) => order.paymentStatus === 'pending' && order.paymentMethod === 'cash');
-      if (routeTableId) {
-        orders = orders.filter((order) => order.tableDbId === routeTableId);
-      }
-      return orders;
-    },
-    [liveOrders, routeTableId],
-  );
+      if (fetchError) throw fetchError;
+      setDirectOrders((data ?? []).map(mapBillOrder));
+    } catch (err) {
+      setError(err.message || 'Unable to load bills for this table.');
+      setDirectOrders([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [routeTableId]);
+
+  useEffect(() => {
+    if (routeTableId) {
+      void loadTableBills();
+    } else {
+      void refreshOrders();
+    }
+  }, [routeTableId, loadTableBills, refreshOrders]);
+
+  // Use direct query results for table-specific billing, shared state for general billing
+  const filteredOrders = useMemo(() => {
+    if (routeTableId) return directOrders;
+    return liveOrders.filter((order) => order.paymentStatus === 'pending');
+  }, [routeTableId, directOrders, liveOrders]);
 
   useEffect(() => {
     if (!filteredOrders.length) {
@@ -83,11 +153,12 @@ export default function Billing() {
 
       handleDownload(updatedOrder);
       setMessage(`Payment confirmed for order ${String(updatedOrder.id).slice(0, 8)}. Invoice downloaded and table released.`);
-      await refreshOrders();
 
-      // If accessed from tables page, redirect back
       if (routeTableId) {
-        navigate('/tables');
+        // Small delay so user sees the success message, then redirect
+        setTimeout(() => navigate('/tables'), 1200);
+      } else {
+        await refreshOrders();
       }
     } catch (err) {
       setError(err.message || 'Unable to confirm the payment.');
@@ -118,8 +189,12 @@ export default function Billing() {
         {/* Pending payments */}
         <Card className="glass-card">
           <CardHeader className="p-5">
-            <CardTitle className="font-display text-lg font-semibold">Pending cash payments</CardTitle>
-            <p className="mt-1 text-xs text-slate-500">{filteredOrders.length} order{filteredOrders.length !== 1 ? 's' : ''} awaiting payment</p>
+            <CardTitle className="font-display text-lg font-semibold">
+              {routeTableId ? 'Table bill' : 'Pending payments'}
+            </CardTitle>
+            <p className="mt-1 text-xs text-slate-500">
+              {loading ? 'Loading...' : `${filteredOrders.length} order${filteredOrders.length !== 1 ? 's' : ''} awaiting payment`}
+            </p>
           </CardHeader>
           <CardContent className="space-y-2 p-5 pt-0">
             {filteredOrders.length ? filteredOrders.map((order) => (
@@ -145,7 +220,7 @@ export default function Billing() {
                   <span className="rounded-full border border-white/[0.06] bg-white/[0.03] px-2 py-0.5 text-[11px] text-slate-400">{order.paymentMethod}</span>
                 </div>
               </button>
-            )) : <p className="text-sm text-slate-500">No orders match this filter.</p>}
+            )) : <p className="text-sm text-slate-500">{routeTableId ? 'No pending bill for this table.' : 'No pending orders.'}</p>}
           </CardContent>
         </Card>
 
