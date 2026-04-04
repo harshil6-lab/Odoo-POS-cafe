@@ -1,14 +1,16 @@
 import express from 'express';
-import cors from 'cors';
 import Razorpay from 'razorpay';
+import cors from 'cors';
+import 'dotenv/config';
 
 const app = express();
+
 app.use(cors());
 app.use(express.json());
 
 const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_SZY3Km6Ugac72h',
-  key_secret: process.env.RAZORPAY_KEY_SECRET || '71thJRBEQjLKJSoBOmkSV6Ne',
+  key_id: process.env.RAZORPAY_KEY_ID,
+  key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
 
 app.post('/create-order', async (req, res) => {
@@ -20,19 +22,18 @@ app.post('/create-order', async (req, res) => {
     }
 
     const order = await razorpay.orders.create({
-      amount: Math.round(amount * 100), // Convert rupees to paise
+      amount: Math.round(amount * 100),
       currency: 'INR',
-      receipt: `order_${Date.now()}`,
+      receipt: `receipt_${Date.now()}`,
     });
 
-    res.json({ id: order.id, amount: order.amount, currency: order.currency });
+    res.json(order);
   } catch (err) {
     console.error('Razorpay order creation failed:', err);
-    res.status(500).json({ error: err.message || 'Order creation failed' });
+    res.status(500).json({ error: 'Failed to create Razorpay order' });
   }
 });
 
-const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => {
-  console.log(`Backend server running on http://localhost:${PORT}`);
-});
+const PORT = process.env.PORT || 5000;
+
+app.listen(PORT, () => console.log(`Razorpay server running on port ${PORT}`));
