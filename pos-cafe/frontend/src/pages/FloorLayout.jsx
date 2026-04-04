@@ -12,6 +12,7 @@ export default function FloorLayout() {
   const [floor, setFloor] = useState('Ground floor');
   const [selectedTable, setSelectedTable] = useState(null);
   const [form, setForm] = useState({ name: '', guests: '2', date: '2026-04-05', time: '19:30' });
+  const [error, setError] = useState('');
 
   const tables = useMemo(() => (floor === 'Ground floor' ? groundFloorTables : firstFloorTables), [firstFloorTables, floor, groundFloorTables]);
 
@@ -49,6 +50,8 @@ export default function FloorLayout() {
               </button>
             ))}
           </div>
+
+          {error ? <p className="mt-6 rounded-xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-300">{error}</p> : null}
 
           <div className="mt-8 grid gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {tables.map((table) => (
@@ -98,7 +101,15 @@ export default function FloorLayout() {
               <Button variant="outline" className="h-11 rounded-xl border-[#374151] bg-[#1F2937] px-5 text-sm text-[#F9FAFB] hover:bg-[#111827]" onClick={() => setSelectedTable(null)}>
                 Cancel
               </Button>
-              <Button className="h-11 rounded-xl border-[#F59E0B] bg-[#F59E0B] px-5 text-sm text-[#0B1220] hover:bg-[#D97706]" onClick={() => { reserveTable({ tableId: selectedTable.id, ...form }); setSelectedTable(null); }}>
+              <Button className="h-11 rounded-xl border-[#F59E0B] bg-[#F59E0B] px-5 text-sm text-[#0B1220] hover:bg-[#D97706]" onClick={async () => {
+                try {
+                  await reserveTable({ tableId: selectedTable.id, ...form });
+                  setError('');
+                  setSelectedTable(null);
+                } catch (err) {
+                  setError(err.message || 'Unable to save the reservation.');
+                }
+              }}>
                 Reserve table
               </Button>
             </div>

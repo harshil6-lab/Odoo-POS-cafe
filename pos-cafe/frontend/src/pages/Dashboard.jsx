@@ -11,9 +11,9 @@ export default function Dashboard() {
 
   const metrics = [
     { label: 'Tables in service', value: tables.filter((table) => table.status === 'occupied').length, meta: 'Across both floors' },
-    { label: 'Reservations', value: reservations.length, meta: 'Saved locally' },
+    { label: 'Reservations', value: reservations.length, meta: 'Synced from Supabase' },
     { label: 'Kitchen tickets', value: kitchenTickets.length, meta: 'Preparing to served' },
-    { label: 'Live customer orders', value: liveOrders.length, meta: 'Placed from QR or menu flow' },
+    { label: 'Live customer orders', value: liveOrders.length, meta: 'Placed from QR or customer menu' },
   ];
 
   return (
@@ -22,7 +22,7 @@ export default function Dashboard() {
         <p className="text-sm text-slate-400">Dashboard</p>
         <h1 className="mt-2 text-2xl font-semibold text-[#F9FAFB]">Welcome back, {displayName}</h1>
         <p className="mt-3 text-sm leading-7 text-slate-400">
-          Keep an eye on floor activity, kitchen flow, and the latest frontend-only orders from one place.
+          Keep an eye on floor activity, kitchen flow, and the latest Supabase orders from one place.
         </p>
       </div>
 

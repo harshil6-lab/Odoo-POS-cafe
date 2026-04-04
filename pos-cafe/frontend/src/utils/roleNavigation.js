@@ -8,6 +8,7 @@ export const PUBLIC_NAV_LINKS = [
 export const APP_NAV_LINKS = [
   { label: 'Dashboard', to: '/dashboard' },
   { label: 'Register', to: '/register' },
+  { label: 'Billing', to: '/billing' },
   { label: 'Tables', to: '/tables' },
   { label: 'Kitchen', to: '/kitchen' },
   { label: 'Orders', to: '/orders' },
@@ -16,16 +17,16 @@ export const APP_NAV_LINKS = [
 
 const redirectByRole = {
   customer: '/menu',
-  waiter: '/dashboard',
+  waiter: '/register',
   manager: '/dashboard',
-  cashier: '/dashboard',
+  cashier: '/billing',
 };
 
 const badgeLabels = {
   customer: 'Customer workspace',
-  waiter: 'Waiter workspace',
-  cashier: 'Cashier workspace',
-  manager: 'Manager workspace',
+  waiter: 'Waiter',
+  cashier: 'Cashier',
+  manager: 'Manager',
 };
 
 export function normalizeRole(role) {
@@ -48,7 +49,7 @@ export function normalizeRole(role) {
 
 export function getRedirectPathForRole(role) {
   const normalized = normalizeRole(role);
-  return redirectByRole[normalized] || '/customer-ordering';
+  return redirectByRole[normalized] || '/menu';
 }
 
 export function getRoleBadgeLabel(role) {

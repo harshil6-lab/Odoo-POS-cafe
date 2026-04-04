@@ -25,7 +25,7 @@ import ProtectedRoute from "./components/ProtectedRoute"
 function App() {
   return (
     <Routes>
-      <Route path="/table/:tableId" element={<TableEntry />} />
+      <Route path="/table/:table_code" element={<TableEntry />} />
 
       <Route element={<LandingLayout />}>
         <Route path="/" element={<Landing />} />
@@ -47,13 +47,13 @@ function App() {
 
       <Route element={<ProtectedRoute />}>
         <Route element={<DashboardLayout />}>
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/billing" element={<Register />} />
-          <Route path="/kitchen" element={<Kitchen />} />
-          <Route path="/tables" element={<FloorLayout />} />
-          <Route path="/orders" element={<Dashboard />} />
-          <Route path="/reports" element={<Dashboard />} />
+          <Route path="/dashboard" element={<ProtectedRoute allowedRoles={['manager']}><Dashboard /></ProtectedRoute>} />
+          <Route path="/register" element={<ProtectedRoute allowedRoles={['waiter']}><Register /></ProtectedRoute>} />
+          <Route path="/billing" element={<ProtectedRoute allowedRoles={['cashier']}><Register /></ProtectedRoute>} />
+          <Route path="/kitchen" element={<ProtectedRoute allowedRoles={['manager', 'waiter']}><Kitchen /></ProtectedRoute>} />
+          <Route path="/tables" element={<ProtectedRoute allowedRoles={['manager', 'waiter']}><FloorLayout /></ProtectedRoute>} />
+          <Route path="/orders" element={<ProtectedRoute allowedRoles={['manager', 'waiter', 'cashier']}><Dashboard /></ProtectedRoute>} />
+          <Route path="/reports" element={<ProtectedRoute allowedRoles={['manager']}><Dashboard /></ProtectedRoute>} />
         </Route>
       </Route>
 

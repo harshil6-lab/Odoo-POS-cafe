@@ -7,28 +7,35 @@ import { getOrderStatusTone } from '../utils/helpers';
 const stages = ['Preparing', 'Cooking', 'Ready', 'Served'];
 
 export default function Kitchen() {
-  const { kitchenTickets } = useAppState();
+  const { kitchenTickets, syncKitchenTicketStatus } = useAppState();
   const [tickets, setTickets] = useState(kitchenTickets);
 
   useEffect(() => {
     setTickets(kitchenTickets);
   }, [kitchenTickets]);
 
-  const moveTicket = (id, currentStatus) => {
+  const moveTicket = async (id, currentStatus) => {
     const currentIndex = stages.indexOf(currentStatus);
     if (currentIndex === stages.length - 1) {
       setTickets((current) => current.filter((ticket) => ticket.id !== id));
       return;
     }
 
-    setTickets((current) => current.map((ticket) => (ticket.id === id ? { ...ticket, status: stages[currentIndex + 1] } : ticket)));
+    const nextStatus = stages[currentIndex + 1];
+    setTickets((current) => current.map((ticket) => (ticket.id === id ? { ...ticket, status: nextStatus } : ticket)));
+
+    try {
+      await syncKitchenTicketStatus(id, nextStatus);
+    } catch {
+      setTickets((current) => current.map((ticket) => (ticket.id === id ? { ...ticket, status: currentStatus } : ticket)));
+    }
   };
 
   return (
     <div className="space-y-8">
       <div className="rounded-xl border border-[#374151] bg-[#111827] p-6 shadow-sm">
         <h1 className="text-2xl font-semibold text-[#F9FAFB]">Kitchen board</h1>
-        <p className="mt-3 text-sm leading-7 text-slate-400">Track every ticket from preparing to served using frontend-only mock workflow data.</p>
+        <p className="mt-3 text-sm leading-7 text-slate-400">Track every ticket from preparing to served using Supabase order data.</p>
       </div>
 
       <div className="grid gap-8 xl:grid-cols-4">
@@ -55,7 +62,7 @@ export default function Kitchen() {
                     ))}
                   </div>
                   <p className="mt-4 text-sm text-slate-400">Timer: {ticket.timer}</p>
-                  <Button className="mt-4 h-11 w-full rounded-xl text-sm" variant={index === stages.length - 1 ? 'outline' : 'default'} onClick={() => moveTicket(ticket.id, ticket.status)}>
+                  <Button className="mt-4 h-11 w-full rounded-xl text-sm" variant={index === stages.length - 1 ? 'outline' : 'default'} onClick={() => void moveTicket(ticket.id, ticket.status)}>
                     {index === stages.length - 1 ? 'Clear ticket' : `Move to ${stages[index + 1]}`}
                   </Button>
                 </div>

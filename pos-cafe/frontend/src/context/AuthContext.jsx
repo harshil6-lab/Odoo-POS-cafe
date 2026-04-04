@@ -1,32 +1,12 @@
 import { createContext, useContext, useEffect, useState } from 'react';
+import { authService } from '../services/authService';
 import { getRedirectPathForRole, getRoleBadgeLabel, normalizeRole } from '../utils/roleNavigation';
 
 const AuthContext = createContext(null);
-const STORAGE_KEY = 'pos-cafe-mock-staff-session';
+const STAFF_ROLES = ['manager', 'waiter', 'cashier'];
 
-function readStoredStaff() {
-  if (typeof window === 'undefined') {
-    return null;
-  }
-
-  try {
-    return JSON.parse(window.localStorage.getItem(STORAGE_KEY) || 'null');
-  } catch {
-    return null;
-  }
-}
-
-function writeStoredStaff(value) {
-  if (typeof window === 'undefined') {
-    return;
-  }
-
-  if (!value) {
-    window.localStorage.removeItem(STORAGE_KEY);
-    return;
-  }
-
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(value));
+function isStaffRole(role) {
+  return STAFF_ROLES.includes(normalizeRole(role));
 }
 
 export function AuthProvider({ children }) {
@@ -36,17 +16,79 @@ export function AuthProvider({ children }) {
   const [role, setRole] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const fetchUserRole = async (userId) => {
+    return authService.getUserRole(userId);
+  };
+
   useEffect(() => {
-    const storedStaff = readStoredStaff();
+    let mounted = true;
 
-    if (storedStaff) {
-      setSession({ user: storedStaff });
-      setUser(storedStaff);
-      setProfile(storedStaff);
-      setRole(normalizeRole(storedStaff.role));
-    }
+    const clearAuth = () => {
+      if (!mounted) {
+        return;
+      }
 
-    setLoading(false);
+      setSession(null);
+      setUser(null);
+      setProfile(null);
+      setRole(null);
+    };
+
+    const hydrateAuth = async (nextSession) => {
+      if (!mounted) {
+        return;
+      }
+
+      if (!nextSession?.user) {
+        clearAuth();
+        return;
+      }
+
+      try {
+        const nextProfile = await authService.getRoleProfile(nextSession.user.id);
+
+        if (!nextProfile || !isStaffRole(nextProfile.role)) {
+          await authService.signOut();
+          clearAuth();
+          return;
+        }
+
+        if (!mounted) {
+          return;
+        }
+
+        setSession(nextSession);
+        setUser(nextSession.user);
+        setProfile(nextProfile);
+        setRole(normalizeRole(nextProfile.role));
+      } catch {
+        clearAuth();
+      }
+    };
+
+    void authService
+      .getSession()
+      .then(({ session: currentSession }) => hydrateAuth(currentSession))
+      .finally(() => {
+        if (mounted) {
+          setLoading(false);
+        }
+      });
+
+    const {
+      data: { subscription },
+    } = authService.onAuthStateChange((_event, nextSession) => {
+      void hydrateAuth(nextSession).finally(() => {
+        if (mounted) {
+          setLoading(false);
+        }
+      });
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const login = async (credentials) => {
@@ -54,54 +96,39 @@ export function AuthProvider({ children }) {
       throw new Error('Enter email and password to continue.');
     }
 
-    const nextRole = normalizeRole(credentials.role || 'waiter');
-    const nextUser = {
-      id: `staff-${Date.now()}`,
-      email: credentials.email,
-      full_name: credentials.fullName || credentials.email.split('@')[0],
-      role: nextRole,
-    };
+    const result = await authService.signIn(credentials);
+    const nextRole = normalizeRole(result.profile?.role);
 
-    writeStoredStaff(nextUser);
-    setSession({ user: nextUser });
-    setUser(nextUser);
-    setProfile(nextUser);
+    setSession(result.session);
+    setUser(result.user);
+    setProfile(result.profile);
     setRole(nextRole);
 
     return {
-      data: { user: nextUser },
-      redirectTo: '/dashboard',
+      data: result,
+      redirectTo: getRedirectPathForRole(nextRole),
     };
   };
 
   const signup = async (payload) => {
-    if (!payload.fullName || !payload.email || !payload.password) {
+    if (!payload.email || !payload.password) {
       throw new Error('Complete the form before creating the account.');
     }
 
-    const nextRole = normalizeRole(payload.role || 'waiter');
-    const nextUser = {
-      id: `staff-${Date.now()}`,
-      email: payload.email,
-      full_name: payload.fullName,
-      phone: payload.phone,
-      role: nextRole,
-    };
+    const result = await authService.signUp(payload);
 
-    writeStoredStaff(nextUser);
-    setSession({ user: nextUser });
-    setUser(nextUser);
-    setProfile(nextUser);
-    setRole(nextRole);
+    if (result.session) {
+      await authService.signOut();
+    }
 
     return {
-      data: { user: nextUser },
-      redirectTo: '/dashboard',
+      data: result,
+      redirectTo: null,
     };
   };
 
   const logout = async () => {
-    writeStoredStaff(null);
+    await authService.signOut();
     setSession(null);
     setUser(null);
     setProfile(null);
@@ -124,6 +151,7 @@ export function AuthProvider({ children }) {
     login,
     signup,
     logout,
+    fetchUserRole,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

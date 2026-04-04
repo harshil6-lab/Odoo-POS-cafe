@@ -4,19 +4,17 @@ import CartPanel from './CartPanel';
 import CategoryTabs from './CategoryTabs';
 import Keypad from './Keypad';
 import ProductGrid from './ProductGrid';
+import { useAppState } from '../context/AppStateContext';
 import { Input } from './ui/Input';
-import { menuItems } from '../data/restaurantData';
+import { menuItems as seedMenuItems } from '../data/restaurantData';
 import { calculateOrderTotals } from '../utils/helpers';
 
-const CATEGORIES = ['All', ...new Set(menuItems.map((item) => item.category))];
-
-const INITIAL_CART = [
-  { ...menuItems[0], qty: 2 },
-  { ...menuItems[9], qty: 1 },
-  { ...menuItems[16], qty: 1 },
-];
+const INITIAL_CART = [{ ...seedMenuItems[0], qty: 2 }];
 
 export default function RegisterLayout() {
+  const { catalogItems, catalogCategories } = useAppState();
+  const products = catalogItems.length ? catalogItems : seedMenuItems;
+  const categories = ['All', ...new Set((catalogCategories.length ? catalogCategories.map((item) => item.name) : products.map((item) => item.category)))];
   const [activeCategory, setActiveCategory] = useState('All');
   const [search, setSearch] = useState('');
   const [guestCount, setGuestCount] = useState(2);
@@ -25,12 +23,12 @@ export default function RegisterLayout() {
 
   const filteredProducts = useMemo(
     () =>
-      menuItems.filter((product) => {
+      products.filter((product) => {
         const categoryMatch = activeCategory === 'All' || product.category === activeCategory;
         const searchMatch = product.name.toLowerCase().includes(search.toLowerCase());
         return categoryMatch && searchMatch;
       }),
-    [activeCategory, search],
+    [activeCategory, products, search],
   );
 
   const totals = useMemo(() => calculateOrderTotals(cart), [cart]);
@@ -112,7 +110,7 @@ export default function RegisterLayout() {
             />
           </div>
 
-          <CategoryTabs categories={CATEGORIES} activeCategory={activeCategory} onChange={setActiveCategory} />
+          <CategoryTabs categories={categories} activeCategory={activeCategory} onChange={setActiveCategory} />
         </div>
 
         <ProductGrid products={filteredProducts} onAdd={addToCart} />

@@ -5,14 +5,13 @@ import CartPanel from '../components/CartPanel';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { useAppState } from '../context/AppStateContext';
-import { menuItems } from '../data/restaurantData';
 import { formatCurrency } from '../utils/helpers';
-
-const categories = ['All', ...new Set(menuItems.map((item) => item.category))];
 
 export default function Menu() {
   const navigate = useNavigate();
   const {
+    catalogItems,
+    catalogCategories,
     selectedTableId,
     setSelectedTableId,
     groundFloorTables,
@@ -26,6 +25,11 @@ export default function Menu() {
     customerDetails,
     setCustomerDetails,
   } = useAppState();
+
+  const categories = useMemo(
+    () => ['All', ...catalogCategories.map((category) => category.name)],
+    [catalogCategories],
+  );
 
   const [activeCategory, setActiveCategory] = useState('All');
   const [search, setSearch] = useState('');
@@ -50,12 +54,12 @@ export default function Menu() {
 
   const filteredItems = useMemo(
     () =>
-      menuItems.filter((item) => {
+      catalogItems.filter((item) => {
         const categoryMatch = activeCategory === 'All' || item.category === activeCategory;
         const searchMatch = item.name.toLowerCase().includes(search.toLowerCase());
         return categoryMatch && searchMatch;
       }),
-    [activeCategory, search],
+    [activeCategory, catalogItems, search],
   );
 
   const openItemModal = (item) => {

@@ -1,6 +1,11 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { useAuth } from './AuthContext';
 import { calculateOrderTotals } from '../utils/helpers';
-import { initialReservations, kitchenTickets as seedKitchenTickets, tablesData } from '../data/restaurantData';
+import { getCategories, getMenuItems } from '../services/menuService';
+import { createOrderWithItemsAndPayment, getOrders, updateOrderStatus } from '../services/orderService';
+import { createReservation, getReservations } from '../services/reservationService';
+import { getTables, updateTableStatus } from '../services/tableService';
+import { initialReservations, kitchenTickets as seedKitchenTickets, menuItems as seedMenuItems, tablesData } from '../data/restaurantData';
 
 const AppStateContext = createContext(null);
 
@@ -8,12 +13,20 @@ const STORAGE_KEYS = {
   tableId: 'table_id',
   cart: 'pos-cafe-customer-cart',
   customer: 'pos-cafe-customer-details',
-  reservations: 'pos-cafe-reservations',
-  liveOrders: 'pos-cafe-live-orders',
 };
 
-function readStorage(key, fallback, storage) {
+function getStorage(type) {
   if (typeof window === 'undefined') {
+    return null;
+  }
+
+  return type === 'local' ? window.localStorage : window.sessionStorage;
+}
+
+function readStorage(key, fallback, type = 'session') {
+  const storage = getStorage(type);
+
+  if (!storage) {
     return fallback;
   }
 
@@ -25,8 +38,10 @@ function readStorage(key, fallback, storage) {
   }
 }
 
-function writeStorage(key, value, storage) {
-  if (typeof window === 'undefined') {
+function writeStorage(key, value, type = 'session') {
+  const storage = getStorage(type);
+
+  if (!storage) {
     return;
   }
 
@@ -63,36 +78,108 @@ function createOrderId() {
 }
 
 export function AppStateProvider({ children }) {
+  const { isAuthenticated } = useAuth();
   const [selectedTableId, setSelectedTableIdState] = useState(() => readTableId());
-  const [cartItems, setCartItems] = useState(() => readStorage(STORAGE_KEYS.cart, [], window.sessionStorage));
-  const [customerDetails, setCustomerDetailsState] = useState(() => readStorage(STORAGE_KEYS.customer, { name: '', phone: '' }, window.sessionStorage));
-  const [reservations, setReservations] = useState(() => readStorage(STORAGE_KEYS.reservations, initialReservations, window.localStorage));
-  const [liveOrders, setLiveOrders] = useState(() => readStorage(STORAGE_KEYS.liveOrders, [], window.localStorage));
+  const [cartItems, setCartItems] = useState(() => readStorage(STORAGE_KEYS.cart, []));
+  const [customerDetails, setCustomerDetailsState] = useState(() => readStorage(STORAGE_KEYS.customer, { name: '', phone: '' }));
+  const [catalogItems, setCatalogItems] = useState(seedMenuItems);
+  const [catalogCategories, setCatalogCategories] = useState([]);
+  const [tables, setTables] = useState(tablesData);
+  const [reservations, setReservations] = useState(initialReservations);
+  const [liveOrders, setLiveOrders] = useState([]);
 
   useEffect(() => {
     writeTableId(selectedTableId);
   }, [selectedTableId]);
 
   useEffect(() => {
-    writeStorage(STORAGE_KEYS.cart, cartItems, window.sessionStorage);
+    writeStorage(STORAGE_KEYS.cart, cartItems);
   }, [cartItems]);
 
   useEffect(() => {
-    writeStorage(STORAGE_KEYS.customer, customerDetails, window.sessionStorage);
+    writeStorage(STORAGE_KEYS.customer, customerDetails);
   }, [customerDetails]);
 
   useEffect(() => {
-    writeStorage(STORAGE_KEYS.reservations, reservations, window.localStorage);
-  }, [reservations]);
+    let active = true;
+
+    const loadPublicData = async () => {
+      try {
+        const [menuData, categoryData, tableData, reservationData] = await Promise.all([
+          getMenuItems(),
+          getCategories(),
+          getTables(),
+          getReservations(),
+        ]);
+
+        if (!active) {
+          return;
+        }
+
+        if (menuData.length) {
+          setCatalogItems(menuData);
+        }
+
+        setCatalogCategories(categoryData);
+
+        if (tableData.length) {
+          setTables(tableData);
+        }
+
+        setReservations(reservationData);
+      } catch {
+        if (!active) {
+          return;
+        }
+
+        setCatalogItems(seedMenuItems);
+        setTables(tablesData);
+        setReservations(initialReservations);
+      }
+    };
+
+    void loadPublicData();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
-    writeStorage(STORAGE_KEYS.liveOrders, liveOrders, window.localStorage);
-  }, [liveOrders]);
+    let active = true;
+
+    const loadOrders = async () => {
+      if (!isAuthenticated) {
+        if (active) {
+          setLiveOrders([]);
+        }
+        return;
+      }
+
+      try {
+        const orders = await getOrders();
+
+        if (active) {
+          setLiveOrders(orders);
+        }
+      } catch {
+        if (active) {
+          setLiveOrders([]);
+        }
+      }
+    };
+
+    void loadOrders();
+
+    return () => {
+      active = false;
+    };
+  }, [isAuthenticated]);
 
   const tablesWithStatus = useMemo(() => {
     const reservedTables = new Map(reservations.map((reservation) => [reservation.tableId, reservation]));
 
-    return tablesData.map((table) => {
+    return tables.map((table) => {
       const reservation = reservedTables.get(table.id);
       return {
         ...table,
@@ -100,23 +187,22 @@ export function AppStateProvider({ children }) {
         reservation,
       };
     });
-  }, [reservations]);
+  }, [reservations, tables]);
 
   const groundFloorTables = useMemo(() => tablesWithStatus.filter((table) => table.id.startsWith('G')), [tablesWithStatus]);
   const firstFloorTables = useMemo(() => tablesWithStatus.filter((table) => table.id.startsWith('F')), [tablesWithStatus]);
   const totals = useMemo(() => calculateOrderTotals(cartItems), [cartItems]);
 
   const kitchenTickets = useMemo(
-    () => [
-      ...liveOrders.map((order) => ({
-        id: order.id,
-        tableId: order.tableId,
-        status: order.status,
-        items: order.items.map((item) => `${item.name} x${item.quantity}`),
-        timer: 'Just now',
-      })),
-      ...seedKitchenTickets,
-    ],
+    () => (liveOrders.length
+      ? liveOrders.map((order) => ({
+          id: order.id,
+          tableId: order.tableId,
+          status: order.status,
+          items: order.items.map((item) => `${item.name} x${item.quantity}`),
+          timer: 'Live',
+        }))
+      : seedKitchenTickets),
     [liveOrders],
   );
 
@@ -171,39 +257,66 @@ export function AppStateProvider({ children }) {
     setCartItems([]);
   };
 
-  const reserveTable = ({ tableId, name, guests, date, time }) => {
-    const reservation = {
-      id: createReservationId(tableId),
-      tableId,
-      name,
-      guests,
-      date,
-      time,
-    };
+  const reserveTable = async ({ tableId, name, guests, date, time }) => {
+    const matchedTable = tablesWithStatus.find((table) => table.id === tableId || table.dbId === tableId);
+    const reservationTime = new Date(`${date}T${time}:00`).toISOString();
 
-    setReservations((current) => [...current.filter((item) => item.tableId !== tableId), reservation]);
-    return reservation;
+    const createdReservation = await createReservation({
+      table_id: matchedTable?.dbId ?? tableId,
+      customer_name: name,
+      guests: Number(guests),
+      reservation_time: reservationTime,
+    });
+
+    setReservations((current) => [...current.filter((item) => item.tableId !== createdReservation.tableId), createdReservation]);
+    return createdReservation;
   };
 
-  const placeOrder = (paymentMethod) => {
+  const placeOrder = async (paymentMethod) => {
     if (!selectedTableId || !customerDetails.name || !cartItems.length) {
       throw new Error('Add a table, customer name, and at least one item before checkout.');
     }
 
-    const order = {
-      id: createOrderId(),
-      tableId: selectedTableId,
-      customer: customerDetails,
-      paymentMethod,
-      status: 'Preparing',
-      items: cartItems,
-      total: totals.total,
-      createdAt: new Date().toISOString(),
-    };
+    const matchedTable = tablesWithStatus.find((table) => table.id === selectedTableId);
+
+    if (!matchedTable?.dbId) {
+      throw new Error('Select a valid table before placing the order.');
+    }
+
+    const order = await createOrderWithItemsAndPayment({
+      order: {
+        table_id: matchedTable.dbId,
+        customer_name: customerDetails.name,
+        payment_method: paymentMethod,
+        status: 'pending',
+      },
+      items: cartItems.map((item) => ({
+        menu_item_id: item.id,
+        quantity: item.quantity,
+        preferences: item.preferences ?? [],
+      })),
+    });
 
     setLiveOrders((current) => [order, ...current]);
+    setTables((current) => current.map((table) => (table.id === selectedTableId ? { ...table, status: 'occupied' } : table)));
     setCartItems([]);
     return order;
+  };
+
+  const syncKitchenTicketStatus = async (orderId, nextStatus) => {
+    if (!isAuthenticated) {
+      return null;
+    }
+
+    const updatedOrder = await updateOrderStatus(orderId, nextStatus);
+    setLiveOrders((current) => current.map((order) => (order.id === updatedOrder.id ? updatedOrder : order)));
+
+    if (nextStatus.toLowerCase() === 'served' && updatedOrder.tableId) {
+      const updatedTable = await updateTableStatus(updatedOrder.tableId, 'available');
+      setTables((current) => current.map((table) => (table.id === updatedTable.id ? updatedTable : table)));
+    }
+
+    return updatedOrder;
   };
 
   const value = {
@@ -217,6 +330,8 @@ export function AppStateProvider({ children }) {
     removeCartItem,
     clearCart,
     totals,
+    catalogItems,
+    catalogCategories,
     reservations,
     reserveTable,
     tables: tablesWithStatus,
@@ -225,6 +340,7 @@ export function AppStateProvider({ children }) {
     kitchenTickets,
     liveOrders,
     placeOrder,
+    syncKitchenTicketStatus,
   };
 
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>;

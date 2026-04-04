@@ -6,7 +6,7 @@ import { APP_NAV_LINKS, PUBLIC_NAV_LINKS } from '../utils/roleNavigation';
 
 export default function Navbar({ isDashboard = false }) {
   const location = useLocation();
-  const { isAuthenticated, displayName, roleBadge, redirectPath, logout } = useAuth();
+  const { isAuthenticated, user, roleBadge, redirectPath, logout } = useAuth();
   const navLinks = isDashboard ? APP_NAV_LINKS : PUBLIC_NAV_LINKS;
 
   if (!isDashboard) {
@@ -40,19 +40,39 @@ export default function Navbar({ isDashboard = false }) {
           </nav>
 
           <div className="ml-auto flex shrink-0 items-center gap-2">
-            <Link to="/login">
-              <Button variant="outline" className="h-11 border-[#374151] bg-[#111827] px-5 text-sm text-[#F9FAFB] hover:bg-[#1F2937]">
-                Login
-              </Button>
-            </Link>
-            <Link to="/signup">
-              <Button className="h-11 border-[#F59E0B] bg-[#F59E0B] px-5 text-sm text-[#0B1220] hover:bg-[#D97706]">
-                Signup
-              </Button>
-            </Link>
-            <Link to="/menu" className="hidden sm:inline-flex">
+            {isAuthenticated ? (
+              <>
+                <div className="hidden items-center gap-3 rounded-xl border border-[#374151] bg-[#111827] px-4 py-2.5 sm:flex">
+                  <div>
+                    <p className="text-sm font-medium text-[#F9FAFB]">{user?.email}</p>
+                    <p className="text-xs text-[#9CA3AF]">{roleBadge}</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => void logout()}
+                  className="h-11 rounded-xl border border-[#374151] bg-[#111827] px-4 text-sm font-medium text-[#F9FAFB] transition hover:bg-[#1F2937]"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <Link to="/login">
+                  <Button variant="outline" className="h-11 border-[#374151] bg-[#111827] px-5 text-sm text-[#F9FAFB] hover:bg-[#1F2937]">
+                    Login
+                  </Button>
+                </Link>
+                <Link to="/signup">
+                  <Button className="h-11 border-[#F59E0B] bg-[#F59E0B] px-5 text-sm text-[#0B1220] hover:bg-[#D97706]">
+                    Signup
+                  </Button>
+                </Link>
+              </>
+            )}
+            <Link to={isAuthenticated ? redirectPath : '/menu'} className="hidden sm:inline-flex">
               <Button variant="ghost" className="h-11 px-4 text-sm text-[#F9FAFB] hover:bg-[#111827]">
-                Order now
+                {isAuthenticated ? 'Open workspace' : 'Order now'}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
@@ -100,10 +120,9 @@ export default function Navbar({ isDashboard = false }) {
           {isAuthenticated ? (
             <>
               <div className="hidden items-center gap-3 rounded-2xl border border-white/10 bg-[#111827] px-4 py-2.5 sm:flex">
-                <div className="h-9 w-9 rounded-full bg-amber-500/15" />
                 <div>
-                  <p className="text-sm font-semibold text-slate-100">{displayName}</p>
-                  <p className="text-xs text-teal-300">{roleBadge}</p>
+                  <p className="text-sm font-medium text-slate-100">{user?.email}</p>
+                  <p className="text-xs text-slate-400">{roleBadge}</p>
                 </div>
               </div>
               <button

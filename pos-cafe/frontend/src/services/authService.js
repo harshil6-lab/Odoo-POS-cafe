@@ -1,5 +1,7 @@
 import { supabase } from './supabaseClient';
 
+const STAFF_ROLES = ['manager', 'waiter', 'cashier'];
+
 const AUTH_RATE_LIMIT_MS = 60 * 1000;
 
 function getCooldownKey(action) {
@@ -90,6 +92,45 @@ export const authService = {
     return data;
   },
 
+  onAuthStateChange(callback) {
+    return supabase.auth.onAuthStateChange(callback);
+  },
+
+  async getUserRole(userId) {
+    const { data, error } = await supabase.rpc('get_user_role', { user_id: userId });
+
+    if (error) {
+      throw error;
+    }
+
+    return String(data || '').toLowerCase();
+  },
+
+  async getRoleProfile(userId) {
+    const { data, error } = await supabase
+      .from('users')
+      .select('id, full_name, email, created_at, role:roles(id, name)')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (error) {
+      throw error;
+    }
+
+    if (!data) {
+      return null;
+    }
+
+    return {
+      id: data.id,
+      full_name: data.full_name || null,
+      email: data.email,
+      created_at: data.created_at,
+      role: String(data.role?.name || '').toLowerCase(),
+      role_id: data.role?.id ?? null,
+    };
+  },
+
   async signIn({ email, password }) {
     throwIfCooldownActive('login');
 
@@ -102,39 +143,17 @@ export const authService = {
       throw normalizeAuthError(error, 'login');
     }
 
-    return data;
-  },
+    const profile = await this.getRoleProfile(data.user.id);
 
-  async getRoleProfile(userId) {
-    const profileQuery = await supabase
-      .from('profiles')
-      .select('id, full_name, role')
-      .eq('id', userId)
-      .maybeSingle();
-
-    if (!profileQuery.error && profileQuery.data) {
-      return {
-        ...profileQuery.data,
-        source: 'profiles',
-      };
+    if (!profile || !STAFF_ROLES.includes(profile.role)) {
+      await supabase.auth.signOut();
+      throw new Error('Only staff accounts can access this app.');
     }
 
-    const userQuery = await supabase
-      .from('users')
-      .select('id, full_name, role')
-      .eq('id', userId)
-      .maybeSingle();
-
-    if (userQuery.error) {
-      throw userQuery.error;
-    }
-
-    return userQuery.data
-      ? {
-          ...userQuery.data,
-          source: 'users',
-        }
-      : null;
+    return {
+      ...data,
+      profile,
+    };
   },
 
   async signUp({ email, password, fullName, phone }) {
@@ -145,9 +164,8 @@ export const authService = {
       password,
       options: {
         data: {
-          full_name: fullName,
+          full_name: fullName || null,
           phone,
-          role: 'customer',
         },
       },
     });
@@ -161,23 +179,18 @@ export const authService = {
       throw new Error('This email is already registered. Try logging in instead.');
     }
 
-    if (data.user) {
-      const { error: profileError } = await supabase.from('profiles').upsert(
-        {
-          id: data.user.id,
-          full_name: fullName,
-          phone,
-          role: 'customer',
-        },
-        { onConflict: 'id' },
-      );
-
-      if (profileError) {
-        // The current schema may still be using public.users instead of profiles.
-      }
-    }
-
-    return data;
+    return {
+      ...data,
+      profile: data.user
+        ? {
+            id: data.user.id,
+            full_name: fullName || null,
+            email,
+            phone,
+            role: null,
+          }
+        : null,
+    };
   },
 
   async signOut() {

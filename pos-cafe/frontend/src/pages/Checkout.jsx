@@ -20,9 +20,9 @@ export default function Checkout() {
 
   const paymentLabel = useMemo(() => paymentMethods.find((item) => item.id === paymentMethod)?.title || 'Cash', [paymentMethod]);
 
-  const submitOrder = () => {
+  const submitOrder = async () => {
     try {
-      const order = placeOrder(paymentLabel);
+      const order = await placeOrder(paymentLabel);
       setSuccessOrder(order);
       setError('');
       setShowUpiModal(false);
@@ -98,7 +98,7 @@ export default function Checkout() {
               <Link to="/menu">
                 <Button variant="outline" className="h-11 rounded-xl border-[#374151] bg-[#1F2937] px-5 text-sm text-[#F9FAFB] hover:bg-[#111827]">Back to menu</Button>
               </Link>
-              <Button className="h-11 rounded-xl border-[#F59E0B] bg-[#F59E0B] px-5 text-sm text-[#0B1220] hover:bg-[#D97706]" onClick={() => paymentMethod === 'upi' ? setShowUpiModal(true) : submitOrder()}>
+              <Button className="h-11 rounded-xl border-[#F59E0B] bg-[#F59E0B] px-5 text-sm text-[#0B1220] hover:bg-[#D97706]" onClick={() => void (paymentMethod === 'upi' ? Promise.resolve(setShowUpiModal(true)) : submitOrder())}>
                 Place order
               </Button>
             </div>
@@ -153,7 +153,7 @@ export default function Checkout() {
               <Button variant="outline" className="h-11 rounded-xl border-[#374151] bg-[#1F2937] px-5 text-sm text-[#F9FAFB] hover:bg-[#111827]" onClick={() => setShowUpiModal(false)}>
                 Cancel
               </Button>
-              <Button className="h-11 rounded-xl border-[#F59E0B] bg-[#F59E0B] px-5 text-sm text-[#0B1220] hover:bg-[#D97706]" onClick={submitOrder}>
+              <Button className="h-11 rounded-xl border-[#F59E0B] bg-[#F59E0B] px-5 text-sm text-[#0B1220] hover:bg-[#D97706]" onClick={() => void submitOrder()}>
                 I have paid
               </Button>
             </div>
