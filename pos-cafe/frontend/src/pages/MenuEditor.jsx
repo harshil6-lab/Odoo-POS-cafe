@@ -8,7 +8,7 @@ export default function MenuEditor() {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState({ name: '', price: '', category_id: '', available: true });
+  const [form, setForm] = useState({ name: '', price: '', category_id: '', is_available: true });
 
   useEffect(() => {
     fetchData();
@@ -17,7 +17,7 @@ export default function MenuEditor() {
   const fetchData = async () => {
     setLoading(true);
     const [{ data: prods }, { data: cats }] = await Promise.all([
-      supabase.from('products').select('*, categories(name)').order('name'),
+      supabase.from('menu_items').select('*, categories(name)').order('name'),
       supabase.from('categories').select('*').order('sort_order'),
     ]);
     setProducts(prods || []);
@@ -30,17 +30,17 @@ export default function MenuEditor() {
       name: form.name,
       price: parseFloat(form.price),
       category_id: form.category_id || null,
-      available: form.available,
+      is_available: form.is_available,
     };
 
     if (editing) {
-      await supabase.from('products').update(payload).eq('id', editing);
+      await supabase.from('menu_items').update(payload).eq('id', editing);
     } else {
-      await supabase.from('products').insert(payload);
+      await supabase.from('menu_items').insert(payload);
     }
 
     setEditing(null);
-    setForm({ name: '', price: '', category_id: '', available: true });
+    setForm({ name: '', price: '', category_id: '', is_available: true });
     fetchData();
   };
 
@@ -50,12 +50,12 @@ export default function MenuEditor() {
       name: product.name,
       price: String(product.price),
       category_id: product.category_id || '',
-      available: product.available,
+      is_available: product.is_available,
     });
   };
 
   const toggleAvailability = async (product) => {
-    await supabase.from('products').update({ available: !product.available }).eq('id', product.id);
+    await supabase.from('menu_items').update({ is_available: !product.is_available }).eq('id', product.id);
     fetchData();
   };
 
@@ -88,7 +88,7 @@ export default function MenuEditor() {
           <div className="flex items-center gap-3">
             <Button onClick={handleSave} className="bg-primary text-white">{editing ? 'Update' : 'Add'}</Button>
             {editing && (
-              <Button variant="outline" onClick={() => { setEditing(null); setForm({ name: '', price: '', category_id: '', available: true }); }}>
+              <Button variant="outline" onClick={() => { setEditing(null); setForm({ name: '', price: '', category_id: '', is_available: true }); }}>
                 Cancel
               </Button>
             )}
@@ -114,14 +114,14 @@ export default function MenuEditor() {
                 <td className="px-4 py-3 text-text-secondary">{p.categories?.name || '—'}</td>
                 <td className="px-4 py-3 text-white">₹{p.price}</td>
                 <td className="px-4 py-3">
-                  <span className={`rounded-full px-2 py-1 text-xs font-medium ${p.available ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
-                    {p.available ? 'Available' : 'Unavailable'}
+                  <span className={`rounded-full px-2 py-1 text-xs font-medium ${p.is_available ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
+                    {p.is_available ? 'Available' : 'Unavailable'}
                   </span>
                 </td>
                 <td className="flex gap-2 px-4 py-3">
                   <Button variant="outline" className="text-xs" onClick={() => startEdit(p)}>Edit</Button>
                   <Button variant="outline" className="text-xs" onClick={() => toggleAvailability(p)}>
-                    {p.available ? 'Disable' : 'Enable'}
+                    {p.is_available ? 'Disable' : 'Enable'}
                   </Button>
                 </td>
               </tr>

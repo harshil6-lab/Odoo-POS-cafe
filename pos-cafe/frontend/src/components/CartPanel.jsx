@@ -25,19 +25,19 @@ function CartPanel({
 }) {
   if (variant === 'customer') {
     return (
-      <Card className="flex h-full flex-col overflow-hidden rounded-[28px] border-white/10 bg-[#111827]">
-        <CardHeader className="gap-4 border-b border-white/10 p-5">
+      <Card className="flex h-full flex-col overflow-hidden glass-card">
+        <CardHeader className="gap-4 border-b border-white/[0.06] p-5">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-sm font-medium text-slate-400">Your cart</p>
-              <CardTitle className="mt-1 text-2xl font-semibold text-slate-100">Order summary</CardTitle>
+              <p className="text-[11px] uppercase tracking-wider text-slate-500">Your cart</p>
+              <CardTitle className="mt-1 font-display text-xl font-bold text-white">Order summary</CardTitle>
             </div>
-            <div className="rounded-full border border-amber-500/20 bg-amber-500/10 px-3 py-1.5 text-xs font-medium tracking-[0.14em] text-amber-300">
+            <div className="rounded-full border border-primary/20 bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary">
               {selectedTableId ? `Table ${selectedTableId}` : 'Select table'}
             </div>
           </div>
 
-          <div className="grid gap-3 rounded-2xl border border-white/10 bg-[#0B1220] p-4">
+          <div className="grid gap-3 rounded-xl border border-white/[0.06] bg-surface p-4">
             <label className="grid gap-2 text-sm font-medium text-slate-300">
               Guest name
               <Input
@@ -58,69 +58,69 @@ function CartPanel({
         </CardHeader>
 
         <CardContent className="flex min-h-0 flex-1 flex-col p-0">
-          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-5">
+          <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-4">
             {cartItems.length ? (
               cartItems.map((item) => (
-                <div key={item.lineId} className="rounded-2xl border border-white/10 bg-[#0B1220] p-4">
+                <div key={item.lineId} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="truncate text-base font-medium text-slate-100">{item.name}</p>
-                      {item.preferences?.length ? <p className="mt-1 text-xs text-slate-400">{item.preferences.join(' • ')}</p> : null}
-                      <p className="mt-1 text-xs text-slate-400">{formatCurrency(item.price)} each</p>
+                      <p className="truncate text-sm font-medium text-white">{item.name}</p>
+                      {item.preferences?.length ? <p className="mt-0.5 text-[11px] text-slate-500">{item.preferences.join(' • ')}</p> : null}
+                      <p className="mt-0.5 text-[11px] text-slate-500">{formatCurrency(item.price)} each</p>
                     </div>
                     <button
                       type="button"
                       onClick={() => onRemove(item.lineId)}
-                      className="rounded-xl border border-white/10 p-2 text-slate-500 transition hover:border-red-500/40 hover:text-red-300"
+                      className="rounded-lg border border-white/[0.06] p-1.5 text-slate-500 transition hover:border-red-500/30 hover:text-red-400"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-3.5 w-3.5" />
                     </button>
                   </div>
 
-                  <div className="mt-3 flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-1 rounded-2xl border border-white/10 bg-[#111827] px-1 py-1">
-                      <button type="button" onClick={() => onDecrease(item.lineId)} className="rounded-xl p-2 text-slate-300 transition hover:bg-white/5">
-                        <Minus className="h-4 w-4" />
+                  <div className="mt-2 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-0.5 rounded-lg border border-white/[0.06] bg-surface px-1 py-0.5">
+                      <button type="button" onClick={() => onDecrease(item.lineId)} className="rounded-md p-1.5 text-slate-400 transition hover:bg-white/[0.04]">
+                        <Minus className="h-3.5 w-3.5" />
                       </button>
-                      <span className="min-w-9 text-center text-sm font-medium text-slate-100">{item.quantity}</span>
-                      <button type="button" onClick={() => onIncrease(item.lineId)} className="rounded-xl p-2 text-amber-400 transition hover:bg-white/5">
-                        <Plus className="h-4 w-4" />
+                      <span className="min-w-7 text-center text-xs font-medium text-white">{item.quantity}</span>
+                      <button type="button" onClick={() => onIncrease(item.lineId)} className="rounded-md p-1.5 text-primary transition hover:bg-white/[0.04]">
+                        <Plus className="h-3.5 w-3.5" />
                       </button>
                     </div>
-                    <p className="text-sm font-medium text-amber-400">{formatCurrency(item.price * item.quantity)}</p>
+                    <p className="text-sm font-medium text-accent">{formatCurrency(item.price * item.quantity)}</p>
                   </div>
                 </div>
               ))
             ) : (
-              <div className="flex h-full min-h-56 flex-col items-center justify-center rounded-2xl border border-dashed border-white/10 bg-[#0B1220] p-4 text-center">
-                <ScrollText className="h-10 w-10 text-slate-700" />
-                <p className="mt-3 text-base font-semibold text-slate-100">No items in the cart</p>
-                <p className="mt-1 max-w-xs text-sm text-slate-400">Choose menu items and add your preferences before checkout.</p>
+              <div className="flex h-full min-h-48 flex-col items-center justify-center rounded-xl border border-dashed border-white/[0.06] bg-white/[0.01] p-4 text-center">
+                <ScrollText className="h-8 w-8 text-slate-700" />
+                <p className="mt-3 text-sm font-semibold text-white">No items in the cart</p>
+                <p className="mt-1 max-w-xs text-xs text-slate-500">Choose menu items and add preferences before checkout.</p>
               </div>
             )}
           </div>
 
-          <div className="border-t border-white/10 bg-[#0B1220] p-5">
-            <div className="grid gap-3">
-              <div className="flex items-center justify-between text-sm text-slate-400">
+          <div className="border-t border-white/[0.06] bg-surface p-4">
+            <div className="grid gap-2">
+              <div className="flex items-center justify-between text-xs text-slate-500">
                 <span>Subtotal</span>
                 <span>{formatCurrency(subtotal)}</span>
               </div>
-              <div className="flex items-center justify-between text-sm text-slate-400">
+              <div className="flex items-center justify-between text-xs text-slate-500">
                 <span>Tax</span>
                 <span>{formatCurrency(tax)}</span>
               </div>
-              <div className="flex items-center justify-between border-t border-slate-800 pt-3 text-base font-semibold text-slate-100">
+              <div className="flex items-center justify-between border-t border-white/[0.06] pt-2 text-sm font-semibold text-white">
                 <span>Total</span>
-                <span className="text-amber-400">{formatCurrency(total)}</span>
+                <span className="text-accent">{formatCurrency(total)}</span>
               </div>
             </div>
 
-            <div className="mt-4 grid gap-2">
-              <Button className="h-11 text-sm" disabled={!cartItems.length || !selectedTableId} onClick={onCheckout}>
+            <div className="mt-3 grid gap-2">
+              <Button size="sm" disabled={!cartItems.length || !selectedTableId} onClick={onCheckout}>
                 Continue to checkout
               </Button>
-              <Button variant="outline" className="h-11 text-sm" disabled={!cartItems.length} onClick={onClearCart}>
+              <Button variant="outline" size="sm" disabled={!cartItems.length} onClick={onClearCart}>
                 Clear cart
               </Button>
             </div>

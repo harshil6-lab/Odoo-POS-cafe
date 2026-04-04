@@ -18,7 +18,7 @@ export default function StaffManagement() {
     setLoading(true);
     const { data, error } = await supabase
       .from('users')
-      .select('id, email, full_name, is_active, role_id, roles(name)')
+      .select('id, email, full_name, role')
       .order('created_at', { ascending: true });
 
     if (error) {
@@ -30,8 +30,7 @@ export default function StaffManagement() {
     setStaff(
       (data || []).map((u) => ({
         ...u,
-        _role: u.roles?.name || '',
-        _active: u.is_active !== false,
+        _role: u.role || '',
         _dirty: false,
       }))
     );
@@ -44,31 +43,13 @@ export default function StaffManagement() {
     );
   };
 
-  const handleActiveToggle = (id) => {
-    setStaff((prev) =>
-      prev.map((u) => (u.id === id ? { ...u, _active: !u._active, _dirty: true } : u))
-    );
-  };
-
   const handleSave = async (user) => {
     setSaving(user.id);
 
     try {
-      // Resolve role_id from name
-      const { data: roleRow } = await supabase
-        .from('roles')
-        .select('id')
-        .eq('name', user._role)
-        .single();
-
-      if (!roleRow) {
-        alert('Role not found');
-        return;
-      }
-
       const { error } = await supabase
         .from('users')
-        .update({ role_id: roleRow.id, is_active: user._active })
+        .update({ role: user._role })
         .eq('id', user.id);
 
       if (error) {
@@ -109,7 +90,6 @@ export default function StaffManagement() {
                 <th className="px-5 py-3 font-medium text-slate-400">Name</th>
                 <th className="px-5 py-3 font-medium text-slate-400">Email</th>
                 <th className="px-5 py-3 font-medium text-slate-400">Role</th>
-                <th className="px-5 py-3 font-medium text-slate-400">Active</th>
                 <th className="px-5 py-3 font-medium text-slate-400" />
               </tr>
             </thead>
@@ -117,13 +97,13 @@ export default function StaffManagement() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="px-5 py-10 text-center text-slate-500">
+                  <td colSpan={4} className="px-5 py-10 text-center text-slate-500">
                     Loading staff...
                   </td>
                 </tr>
               ) : staff.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-5 py-10 text-center text-slate-500">
+                  <td colSpan={4} className="px-5 py-10 text-center text-slate-500">
                     No staff found.
                   </td>
                 </tr>
@@ -156,22 +136,6 @@ export default function StaffManagement() {
                           </option>
                         ))}
                       </select>
-                    </td>
-
-                    <td className="px-5 py-3">
-                      <button
-                        type="button"
-                        onClick={() => handleActiveToggle(u.id)}
-                        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ${
-                          u._active ? 'bg-amber-500' : 'bg-slate-700'
-                        }`}
-                      >
-                        <span
-                          className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow ring-0 transition-transform duration-200 ${
-                            u._active ? 'translate-x-5' : 'translate-x-0'
-                          }`}
-                        />
-                      </button>
                     </td>
 
                     <td className="px-5 py-3">

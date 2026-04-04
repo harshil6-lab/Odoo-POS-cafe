@@ -1,30 +1,24 @@
 import { supabase } from './supabaseClient';
 
 const TABLE_STATUSES = new Set(['available', 'occupied', 'reserved', 'cleaning']);
-const tableSelect = 'id, table_code, floor_id, status, seats, floor:floors(id, name)';
-
-function buildNote(tableCode, floorName) {
-  return floorName === 'Ground Floor'
-    ? `${tableCode} is positioned close to the main service aisle.`
-    : `${tableCode} is in the quieter upstairs seating area.`;
-}
+const tableSelect = 'id, table_code, seats, status';
 
 function mapTableRecord(record) {
-  const floorName = record.floor?.name ?? 'Floor';
-
   return {
     id: record.table_code,
     dbId: record.id,
-    floorId: record.floor_id ?? record.floor?.id ?? null,
     tableCode: record.table_code,
     label: `Table ${record.table_code}`,
-    floor: floorName,
-    zone: floorName,
+    floor: 'Main',
+    zone: 'Main',
     status: record.status,
     seats: record.seats,
-    note: buildNote(record.table_code, floorName),
-    orderAmount: '₹0',
-    server: 'Service team',
+    capacity: record.seats,
+    posX: null,
+    posY: null,
+    shape: 'square',
+    active: true,
+    note: `${record.table_code} — seats ${record.seats}`,
   };
 }
 
@@ -52,11 +46,10 @@ export async function getAllTables() {
   return (data ?? []).map(mapTableRecord);
 }
 
-export async function getTablesByFloor(floorId) {
+export async function getTablesByArea(area) {
   const { data, error } = await supabase
     .from('tables')
     .select(tableSelect)
-    .eq('floor_id', floorId)
     .order('table_code');
 
   if (error) {
@@ -66,11 +59,11 @@ export async function getTablesByFloor(floorId) {
   return (data ?? []).map(mapTableRecord);
 }
 
-export async function getTableByCode(table_code) {
+export async function getTableByCode(tableName) {
   const { data, error } = await supabase
     .from('tables')
     .select(tableSelect)
-    .eq('table_code', table_code)
+    .eq('table_code', tableName)
     .maybeSingle();
 
   if (error) {
@@ -85,13 +78,18 @@ export async function updateTableStatus(tableIdentifier, status) {
   const column = resolveTableColumn(tableIdentifier);
   const { data, error } = await supabase
     .from('tables')
-    .update({ status: nextStatus, updated_at: new Date().toISOString() })
+    .update({ status: nextStatus })
     .eq(column, tableIdentifier)
     .select(tableSelect)
-    .single();
+    .limit(1)
+    .maybeSingle();
 
   if (error) {
     throw error;
+  }
+
+  if (!data) {
+    throw new Error('Missing record');
   }
 
   return mapTableRecord(data);

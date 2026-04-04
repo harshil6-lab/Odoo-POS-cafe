@@ -29,7 +29,7 @@ export default function ReserveTable() {
       <div className="mx-auto max-w-7xl px-6">
         <div className="rounded-xl border border-[#374151] bg-[#111827] p-6 shadow-sm">
           <h1 className="text-2xl font-semibold text-[#F9FAFB]">Reserve a table</h1>
-          <p className="mt-3 text-sm leading-7 text-slate-400">Choose a floor, review table status, and reserve any available table using local mock state.</p>
+          <p className="mt-3 text-sm leading-7 text-slate-400">Choose a floor, review live table status, and reserve any available table synced from Supabase.</p>
 
           <div className="mt-6 flex flex-wrap gap-3">
             {['Ground floor', 'First floor'].map((level) => (
@@ -71,7 +71,7 @@ export default function ReserveTable() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0B1220]/80 px-6 backdrop-blur-sm">
           <div className="w-full max-w-lg rounded-xl border border-[#374151] bg-[#111827] p-6 shadow-md">
             <h2 className="text-2xl font-semibold text-[#F9FAFB]">Reserve {selectedTable.id}</h2>
-            <p className="mt-3 text-sm leading-7 text-slate-400">Complete the details below to save this reservation in local mock state.</p>
+            <p className="mt-3 text-sm leading-7 text-slate-400">Complete the details below to save this reservation to the live reservations feed.</p>
 
             <div className="mt-6 grid gap-4">
               <label className="grid gap-2 text-sm font-medium text-slate-300">

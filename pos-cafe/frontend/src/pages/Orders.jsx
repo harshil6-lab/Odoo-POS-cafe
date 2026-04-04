@@ -1,77 +1,105 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Download, Search } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import OrderCard from '../components/OrderCard';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent } from '../components/ui/Card';
+import { useAppState } from '../context/AppStateContext';
 import { Input } from '../components/ui/Input';
 
-const FILTERS = ['Active', 'Completed', 'Dine-in', 'Takeaway', 'Delivery'];
+const FILTERS = ['All', 'Pending', 'Preparing', 'Cooking', 'Ready'];
 
-const ORDERS = [
-  { id: 'ORD-4051', table: 'T05', items: [{ quantity: 2, name: 'Signature Cappuccino' }, { quantity: 1, name: 'Butter Croissant' }], total: 640, status: 'active', statusLabel: 'Active', type: 'dine_in', typeLabel: 'Dine-in', elapsedMinutes: 14 },
-  { id: 'ORD-4052', table: 'Counter', items: [{ quantity: 1, name: 'Spanish Latte' }, { quantity: 1, name: 'Hazelnut Brownie' }], total: 440, status: 'completed', statusLabel: 'Completed', type: 'takeaway', typeLabel: 'Takeaway', elapsedMinutes: 26 },
-  { id: 'ORD-4053', table: 'T02', items: [{ quantity: 2, name: 'Avocado Toast' }, { quantity: 2, name: 'Iced Matcha' }], total: 1340, status: 'active', statusLabel: 'Preparing', type: 'dine_in', typeLabel: 'Dine-in', elapsedMinutes: 21 },
-  { id: 'ORD-4054', table: 'App', items: [{ quantity: 1, name: 'Truffle Mushroom Melt' }, { quantity: 1, name: 'Cold Brew Tonic' }], total: 710, status: 'active', statusLabel: 'Driver assigned', type: 'delivery', typeLabel: 'Delivery', elapsedMinutes: 12 },
-  { id: 'ORD-4055', table: 'Counter', items: [{ quantity: 1, name: 'Signature Cappuccino' }, { quantity: 2, name: 'Butter Croissant' }], total: 500, status: 'completed', statusLabel: 'Paid', type: 'takeaway', typeLabel: 'Takeaway', elapsedMinutes: 38 },
-];
+function formatStatusLabel(status) {
+  const normalized = String(status || '').toLowerCase();
+  return normalized ? `${normalized[0].toUpperCase()}${normalized.slice(1)}` : 'Pending';
+}
 
 export default function Orders() {
-  const [activeFilter, setActiveFilter] = useState('Active');
+  const { liveOrders, refreshOrders } = useAppState();
+  const [activeFilter, setActiveFilter] = useState('All');
   const [search, setSearch] = useState('');
 
-  const filteredOrders = useMemo(() => {
-    return ORDERS.filter((order) => {
-      const matchesSearch = [order.id, order.table, order.typeLabel].join(' ').toLowerCase().includes(search.toLowerCase());
-      const filterMap = {
-        Active: order.status === 'active',
-        Completed: order.status === 'completed',
-        'Dine-in': order.type === 'dine_in',
-        Takeaway: order.type === 'takeaway',
-        Delivery: order.type === 'delivery',
-      };
+  useEffect(() => {
+    void refreshOrders();
+  }, [refreshOrders]);
 
-      return matchesSearch && filterMap[activeFilter];
-    });
-  }, [activeFilter, search]);
+  const filteredOrders = useMemo(() => {
+    return liveOrders
+      .map((order) => ({
+        ...order,
+        table: order.tableId || 'Walk-in',
+        type: 'dine_in',
+        typeLabel: order.paymentMethod || 'Table order',
+        elapsedMinutes: Math.max(0, Math.floor((Date.now() - new Date(order.createdAt).getTime()) / 60000)),
+        statusLabel: formatStatusLabel(order.status),
+      }))
+      .filter((order) => {
+        const matchesSearch = [order.id, order.table, order.typeLabel, order.statusLabel].join(' ').toLowerCase().includes(search.toLowerCase());
+        const matchesFilter = activeFilter === 'All' || order.statusLabel === activeFilter;
+        return matchesSearch && matchesFilter;
+      });
+  }, [activeFilter, liveOrders, search]);
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <p className="font-accent text-xs uppercase tracking-[0.28em] text-slate-500">Orders board</p>
-          <h1 className="mt-3 font-display text-4xl font-semibold text-white">Orders</h1>
+    <div className="page-container space-y-6">
+      <div className="glass-card p-6">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">📋</span>
+            <div>
+              <p className="text-[11px] uppercase tracking-wider text-slate-500">Orders board</p>
+              <h1 className="font-display text-2xl font-bold tracking-tight text-white">Orders</h1>
+            </div>
+          </div>
+          <Button size="sm">
+            <Download className="mr-2 h-4 w-4" />
+            Export
+          </Button>
         </div>
-        <Button className="rounded-2xl font-accent uppercase tracking-[0.18em]">
-          <Download className="mr-2 h-4 w-4" />
-          Export
-        </Button>
-      </div>
 
-      <Card>
-        <CardContent className="space-y-6 p-6">
+        <div className="mt-5 space-y-4">
           <div className="relative max-w-md">
-            <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
-            <Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search order id, table, or channel" className="h-14 rounded-2xl border-slate-800 bg-slate-950 pl-11" />
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+            <Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search order id, table, or channel" className="pl-10" />
           </div>
 
-          <div className="flex gap-3 overflow-x-auto pb-2">
+          <div className="flex flex-wrap gap-1.5">
             {FILTERS.map((filter) => (
-              <Button key={filter} variant={activeFilter === filter ? 'default' : 'outline'} className="h-12 shrink-0 rounded-2xl px-5 font-accent uppercase tracking-[0.18em]" onClick={() => setActiveFilter(filter)}>
+              <button
+                key={filter}
+                type="button"
+                onClick={() => setActiveFilter(filter)}
+                className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-200 ${
+                  activeFilter === filter
+                    ? 'bg-primary text-white shadow-glow-red'
+                    : 'border border-white/[0.06] bg-white/[0.03] text-slate-400 hover:bg-white/[0.06] hover:text-white'
+                }`}
+              >
                 {filter}
-              </Button>
+              </button>
             ))}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      <div className="grid gap-6 xl:grid-cols-2">
-        {filteredOrders.map((order) => (
+      <div className="grid gap-4 xl:grid-cols-2">
+        {filteredOrders.length ? filteredOrders.map((order) => (
           <OrderCard
             key={order.id}
             order={order}
-            action={<Button variant="outline" className="rounded-2xl font-accent uppercase tracking-[0.18em]">Open ticket</Button>}
+            action={(
+              <Link to="/billing">
+                <Button variant="outline" size="sm">Open billing</Button>
+              </Link>
+            )}
           />
-        ))}
+        )) : (
+          <Card>
+            <CardContent className="p-5 text-sm text-slate-500">
+              No live orders match the current filter.
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

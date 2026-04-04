@@ -12,7 +12,13 @@ const FoodItem = ({ position, geometry, color }) => (
 
 export default function FloatingFood() {
   return (
-    <Canvas camera={{ position: [0, 0, 5] }} style={{ pointerEvents: 'none' }}>
+    <Canvas
+      camera={{ position: [0, 0, 5] }}
+      dpr={[1, 1.5]}
+      frameloop="always"
+      gl={{ antialias: false, powerPreference: 'low-power' }}
+      style={{ pointerEvents: 'none' }}
+    >
       <ambientLight intensity={1.5} />
       <directionalLight position={[5, 5, 5]} />
       <FoodItem position={[-2, 1, 0]} geometry={<boxGeometry />} color="#EF4F5F" />

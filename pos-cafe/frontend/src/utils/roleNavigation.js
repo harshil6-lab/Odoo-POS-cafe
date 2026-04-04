@@ -1,7 +1,8 @@
 export const PUBLIC_NAV_LINKS = [
   { label: 'Menu', to: '/menu' },
-  { label: 'About', to: '/' },
+  { label: 'Cart', to: '/cart' },
   { label: 'Reserve table', to: '/reserve-table' },
+  { label: 'Track order', to: '/track-order' },
   { label: 'Contact', to: '/contact' },
 ];
 
@@ -20,7 +21,7 @@ export const APP_NAV_LINKS = [
 
 export const rolePermissions = {
   manager: ['dashboard', 'tables', 'register', 'billing', 'kitchen', 'orders', 'reports', 'staff', 'menu-editor', 'reservations'],
-  waiter: ['tables', 'register', 'billing'],
+  waiter: ['tables', 'register'],
   cashier: ['tables', 'billing'],
   chef: ['kitchen'],
 };

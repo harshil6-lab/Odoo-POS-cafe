@@ -36,30 +36,60 @@ function Signup() {
     setSuccess('');
 
     try {
-      const result = await signup(form);
+      // Validate role is selected
+      if (!form.role || !STAFF_ROLES.includes(form.role)) {
+        throw new Error('Please select a valid role: ' + STAFF_ROLES.join(', '));
+      }
 
-      // Insert into public.users with selected role (uses role enum directly, no roles table)
+      const result = await signup(form);
       const authUser = result.data?.user;
-      if (authUser) {
-        const { error: insertError } = await supabase.from('users').insert({
+
+      if (!authUser) {
+        throw new Error('Signup failed: No user created.');
+      }
+
+      // CRITICAL: Insert into public.users with selected role IMMEDIATELY after signup
+      // This determines the user's staff workspace access
+      const { data: insertedUser, error: insertError } = await supabase
+        .from('users')
+        .insert({
           id: authUser.id,
           email: authUser.email,
-          full_name: form.fullName,
-          role: form.role,
-        });
-        if (insertError) {
-          throw new Error('Account created but profile insert failed: ' + insertError.message);
-        }
+          full_name: form.fullName || 'Staff Member',
+          role: form.role,  // Direct role assignment (no roles table join needed)
+        })
+        .select('id, email, role, full_name')
+        .limit(1)
+        .maybeSingle();
+
+      if (insertError) {
+        // If user insert fails, the system will fall back to DB 'cashier' default
+        // This is a critical error that must be surfaced
+        await supabase.auth.signOut();
+        throw new Error('Failed to create staff profile: ' + insertError.message);
       }
 
-      if (result.redirectTo) {
-        navigate(result.redirectTo, { replace: true });
-        return;
+      if (!insertedUser) {
+        await supabase.auth.signOut();
+        throw new Error('Staff profile was not created.');
       }
 
-      setSuccess('Account created. You can now sign in with your staff credentials.');
+      // Verify role was saved correctly
+      if (insertedUser.role !== form.role) {
+        console.warn(
+          `Role mismatch after insert: expected ${form.role}, got ${insertedUser.role}`
+        );
+      }
+
+      setSuccess('Staff account created! You can now sign in with your credentials.');
       setForm({ fullName: '', phone: '', email: '', password: '', role: 'waiter' });
+
+      // Auto-redirect to login after 2 seconds
+      setTimeout(() => {
+        navigate('/login', { replace: true });
+      }, 2000);
     } catch (err) {
+      console.error('Signup error:', err);
       setError(err.message ?? 'Unable to sign up.');
     } finally {
       setLoading(false);
@@ -75,13 +105,13 @@ function Signup() {
       panelDescription="Every signup creates a real auth user and a matching public.users profile. Roles are assigned separately for production-style staff access control."
       panelPoints={[
         'Signups create a real auth.users account and linked public.users profile.',
-        'Managers assign the final role from the roles table after account creation.',
+        'Selected staff role is written directly to the public.users role field after account creation.',
         'Users without a role are blocked from the staff workspace.',
       ]}
       footer={(
         <>
           Already have an account?{' '}
-          <Link className="font-semibold text-amber-400" to="/login">
+          <Link className="font-semibold text-primary hover:text-primary/80" to="/login">
             Log in here
           </Link>
         </>
@@ -130,7 +160,7 @@ function Signup() {
             name="role"
             value={form.role}
             onChange={handleChange}
-            className="h-11 w-full rounded-xl border border-[#374151] bg-[#111827] px-4 text-sm text-[#F9FAFB] focus:border-amber-500 focus:outline-none"
+            className="h-11 w-full rounded-xl border border-white/[0.08] bg-surface px-4 text-sm text-white focus:border-primary/50 focus:outline-none"
           >
             {STAFF_ROLES.map((r) => (
               <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>

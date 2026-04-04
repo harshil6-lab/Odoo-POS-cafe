@@ -1,16 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
-import KitchenStatusBadge from '../components/KitchenStatusBadge';
 import { useAppState } from '../context/AppStateContext';
+import { confirmPayment } from '../services/orderService';
+import { updateTableStatus } from '../services/tableService';
 import { downloadTicketPDF } from '../utils/generateTicketPDF';
 import { formatCurrency } from '../utils/helpers';
 
-const FILTERS = ['all', 'pending', 'preparing', 'cooking', 'ready'];
-
 export default function Billing() {
-  const { liveOrders, refreshOrders, syncKitchenTicketStatus } = useAppState();
-  const [filter, setFilter] = useState('all');
+  const { liveOrders, refreshOrders } = useAppState();
   const [selectedOrderId, setSelectedOrderId] = useState(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
@@ -20,9 +18,10 @@ export default function Billing() {
     void refreshOrders();
   }, [refreshOrders]);
 
+  // Cashier only sees cash orders with pending payment
   const filteredOrders = useMemo(
-    () => (filter === 'all' ? liveOrders.filter((order) => order.status !== 'served') : liveOrders.filter((order) => order.status === filter)),
-    [filter, liveOrders],
+    () => liveOrders.filter((order) => order.paymentStatus === 'pending' && order.paymentMethod === 'cash'),
+    [liveOrders],
   );
 
   useEffect(() => {
@@ -65,11 +64,16 @@ export default function Billing() {
     setMessage('');
 
     try {
-      const updatedOrder = await syncKitchenTicketStatus(selectedOrder.id, 'served');
+      const updatedOrder = await confirmPayment(selectedOrder.id);
+
+      // Release table
+      if (updatedOrder.tableDbId) {
+        await updateTableStatus(updatedOrder.tableDbId, 'available');
+      }
+
       handleDownload(updatedOrder);
-      setMessage(`Payment confirmed for order ${updatedOrder.id}. Invoice downloaded and table released.`);
+      setMessage(`Payment confirmed for order ${String(updatedOrder.id).slice(0, 8)}. Invoice downloaded and table released.`);
       await refreshOrders();
-      setSelectedOrderId(updatedOrder.id);
     } catch (err) {
       setError(err.message || 'Unable to confirm the payment.');
     } finally {
@@ -78,126 +82,113 @@ export default function Billing() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="rounded-xl border border-[#374151] bg-[#111827] p-4 shadow-sm">
-        <p className="text-sm text-slate-400">Cashier workspace</p>
-        <h1 className="mt-2 text-2xl font-semibold text-[#F9FAFB]">Billing</h1>
-        <p className="mt-3 text-sm text-slate-400">
-          Review live orders, confirm payment, generate invoices, and release the table when billing is complete.
-        </p>
+    <div className="page-container space-y-6">
+      <div className="glass-card p-6">
+        <div className="flex items-center gap-3">
+          <span className="text-2xl">💳</span>
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wider text-slate-500">Cashier workspace</p>
+            <h1 className="mt-1 font-display text-2xl font-bold tracking-tight text-white">Billing</h1>
+            <p className="mt-1 text-sm text-slate-400">
+              Review live orders, confirm payment, generate invoices, and release the table.
+            </p>
+          </div>
+        </div>
       </div>
 
       {message ? <p className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-300">{message}</p> : null}
       {error ? <p className="rounded-xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-300">{error}</p> : null}
 
-      <div className="grid gap-6 xl:grid-cols-[360px,minmax(0,1fr)]">
-        <Card className="rounded-xl border-[#374151] bg-[#111827] shadow-sm">
-          <CardHeader className="space-y-4 p-4">
-            <CardTitle className="text-2xl font-semibold text-[#F9FAFB]">Pending payments</CardTitle>
-            <div className="flex flex-wrap gap-2">
-              {FILTERS.map((status) => (
-                <button
-                  key={status}
-                  type="button"
-                  onClick={() => setFilter(status)}
-                  className={`rounded-xl border px-4 py-2 text-sm transition ${
-                    filter === status
-                      ? 'border-[#F59E0B] bg-[#F59E0B] text-[#0B1220]'
-                      : 'border-[#374151] bg-[#0B1220] text-[#F9FAFB] hover:bg-[#111827]'
-                  }`}
-                >
-                  {status === 'all' ? 'All' : status}
-                </button>
-              ))}
-            </div>
+      <div className="grid gap-5 xl:grid-cols-[360px,minmax(0,1fr)]">
+        {/* Pending payments */}
+        <Card className="glass-card">
+          <CardHeader className="p-5">
+            <CardTitle className="font-display text-lg font-semibold">Pending cash payments</CardTitle>
+            <p className="mt-1 text-xs text-slate-500">{filteredOrders.length} order{filteredOrders.length !== 1 ? 's' : ''} awaiting payment</p>
           </CardHeader>
-          <CardContent className="space-y-4 p-4 pt-0">
+          <CardContent className="space-y-2 p-5 pt-0">
             {filteredOrders.length ? filteredOrders.map((order) => (
               <button
                 key={order.id}
                 type="button"
                 onClick={() => setSelectedOrderId(order.id)}
-                className={`w-full rounded-xl border p-4 text-left transition ${
-                  selectedOrderId === order.id ? 'border-[#F59E0B] bg-[#1F2937]' : 'border-[#374151] bg-[#0B1220] hover:bg-[#111827]'
+                className={`w-full rounded-xl border p-3 text-left transition-all duration-200 ${
+                  selectedOrderId === order.id
+                    ? 'border-primary/30 bg-primary/[0.06] ring-1 ring-primary/20'
+                    : 'border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04]'
                 }`}
               >
-                <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start justify-between gap-2">
                   <div>
-                    <p className="text-base font-medium text-[#F9FAFB]">{order.id}</p>
-                    <p className="mt-2 text-sm text-slate-400">Table {order.tableId} · {order.customer.name}</p>
+                    <p className="text-sm font-medium text-white">{String(order.id).slice(0, 8)}</p>
+                    <p className="mt-1 text-xs text-slate-500">Table {order.tableId} · {order.customer.name}</p>
                   </div>
-                  <KitchenStatusBadge status={order.status} />
+                  <span className="rounded-full border border-yellow-500/20 bg-yellow-500/10 px-2.5 py-0.5 text-[11px] font-medium text-yellow-300">Pending</span>
                 </div>
-                <div className="mt-3 flex items-center justify-between gap-3 text-sm text-slate-400">
+                <div className="mt-2 flex items-center justify-between text-xs text-slate-500">
                   <span>{order.items.length} items · {formatCurrency(order.total)}</span>
-                  <span className="rounded-full border border-[#374151] bg-[#111827] px-3 py-1 text-sm text-[#F9FAFB]">{order.paymentMethod}</span>
+                  <span className="rounded-full border border-white/[0.06] bg-white/[0.03] px-2 py-0.5 text-[11px] text-slate-400">{order.paymentMethod}</span>
                 </div>
               </button>
-            )) : <p className="text-sm text-slate-400">No orders match this filter.</p>}
+            )) : <p className="text-sm text-slate-500">No orders match this filter.</p>}
           </CardContent>
         </Card>
 
-        <Card className="rounded-xl border-[#374151] bg-[#111827] shadow-sm">
-          <CardHeader className="p-4">
-            <CardTitle className="text-2xl font-semibold text-[#F9FAFB]">Invoice details</CardTitle>
+        {/* Invoice details */}
+        <Card className="glass-card">
+          <CardHeader className="p-5">
+            <CardTitle className="font-display text-lg font-semibold">🧾 Invoice details</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6 p-4 pt-0">
+          <CardContent className="space-y-5 p-5 pt-0">
             {selectedOrder ? (
               <>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="rounded-xl border border-[#374151] bg-[#0B1220] p-4">
-                    <p className="text-sm text-slate-400">Order ID</p>
-                    <p className="mt-2 text-base font-medium text-[#F9FAFB]">{selectedOrder.id}</p>
-                  </div>
-                  <div className="rounded-xl border border-[#374151] bg-[#0B1220] p-4">
-                    <p className="text-sm text-slate-400">Payment method</p>
-                    <div className="mt-2 flex items-center gap-3">
-                      <span className="rounded-full border border-[#374151] bg-[#111827] px-3 py-1 text-sm text-[#F9FAFB]">{selectedOrder.paymentMethod}</span>
-                      <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-sm text-emerald-300">Invoice ready</span>
-                    </div>
-                  </div>
-                  <div className="rounded-xl border border-[#374151] bg-[#0B1220] p-4">
-                    <p className="text-sm text-slate-400">Customer</p>
-                    <p className="mt-2 text-base font-medium text-[#F9FAFB]">{selectedOrder.customer.name}</p>
-                  </div>
-                  <div className="rounded-xl border border-[#374151] bg-[#0B1220] p-4">
-                    <p className="text-sm text-slate-400">Table</p>
-                    <p className="mt-2 text-base font-medium text-[#F9FAFB]">{selectedOrder.tableId}</p>
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  {selectedOrder.items.map((item) => (
-                    <div key={item.id} className="rounded-xl border border-[#374151] bg-[#0B1220] p-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="text-base font-medium text-[#F9FAFB]">{item.name}</p>
-                          {item.preferences?.length ? <p className="mt-1 text-sm text-slate-400">{item.preferences.join(' • ')}</p> : null}
-                        </div>
-                        <p className="text-sm text-slate-400">x{item.quantity}</p>
+                <div className="grid gap-3 md:grid-cols-2">
+                  {[
+                    { label: 'Order ID', value: String(selectedOrder.id).slice(0, 12) },
+                    { label: 'Payment', value: selectedOrder.paymentMethod || 'Not set', badge: selectedOrder.paymentStatus === 'paid' ? 'Paid' : 'Pending' },
+                    { label: 'Customer', value: selectedOrder.customer.name },
+                    { label: 'Table', value: selectedOrder.tableId },
+                  ].map((field) => (
+                    <div key={field.label} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                      <p className="text-[11px] text-slate-500">{field.label}</p>
+                      <div className="mt-1 flex items-center gap-2">
+                        <p className="text-sm font-medium text-white">{field.value}</p>
+                        {field.badge && <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] text-emerald-400">{field.badge}</span>}
                       </div>
-                      <p className="mt-3 text-sm text-[#F59E0B]">{formatCurrency(item.price * item.quantity)}</p>
                     </div>
                   ))}
                 </div>
 
-                <div className="rounded-xl border border-[#374151] bg-[#0B1220] p-4">
-                  <div className="flex items-center justify-between text-sm text-slate-400">
-                    <span>Grand total</span>
-                    <span>{formatCurrency(selectedOrder.total)}</span>
+                <div className="space-y-2">
+                  {selectedOrder.items.map((item) => (
+                    <div key={item.id} className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                      <div>
+                        <p className="text-sm font-medium text-white">{item.name}</p>
+                        {item.preferences?.length ? <p className="mt-0.5 text-[11px] text-slate-500">{item.preferences.join(' · ')}</p> : null}
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs text-slate-500">×{item.quantity}</p>
+                        <p className="text-sm font-medium text-accent">{formatCurrency(item.price * item.quantity)}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-slate-400">Grand total</span>
+                    <span className="text-lg font-bold text-white">{formatCurrency(selectedOrder.total)}</span>
                   </div>
                 </div>
 
-                <div className="flex flex-wrap justify-end gap-3">
-                  <Button variant="outline" className="h-11 rounded-xl border-[#374151] bg-[#1F2937] px-5 text-sm text-[#F9FAFB] hover:bg-[#111827]" onClick={() => handleDownload(selectedOrder)}>
-                    Download invoice
-                  </Button>
-                  <Button className="h-11 rounded-xl border-[#F59E0B] bg-[#F59E0B] px-5 text-sm text-[#0B1220] hover:bg-[#D97706]" disabled={busy || selectedOrder.status === 'served'} onClick={() => void handleConfirmPayment()}>
-                    {busy ? 'Confirming...' : selectedOrder.status === 'served' ? 'Already paid' : 'Confirm payment'}
+                <div className="flex flex-wrap justify-end gap-2">
+                  <Button variant="outline" onClick={() => handleDownload(selectedOrder)}>Download invoice</Button>
+                  <Button disabled={busy || selectedOrder.paymentStatus === 'paid'} onClick={() => void handleConfirmPayment()}>
+                    {busy ? 'Confirming...' : selectedOrder.paymentStatus === 'paid' ? 'Already paid' : 'Confirm payment'}
                   </Button>
                 </div>
               </>
-            ) : <p className="text-sm text-slate-400">Select an order to review its invoice details.</p>}
+            ) : <p className="text-sm text-slate-500">Select an order to review its invoice details.</p>}
           </CardContent>
         </Card>
       </div>
