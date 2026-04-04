@@ -2,22 +2,21 @@ import { supabase } from './supabaseClient';
 
 const orderSelect = `
   id,
-  order_number,
   table_id,
-  user_id,
-  order_type,
   customer_name,
   status,
-  notes,
-  subtotal,
-  tax_amount,
+  payment_status,
+  payment_method,
+  tax,
   service_charge,
-  total_amount,
+  total,
   created_at,
+  updated_at,
   table:tables(id, table_code, status),
   items:order_items(
     id,
     quantity,
+    price,
     unit_price,
     line_total,
     notes,
@@ -41,24 +40,23 @@ function mapOrder(order) {
     imageUrl: item.menu_item?.image_url ?? null,
   }));
 
-  const total = Number(order.total_amount) || items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const total = Number(order.total) || items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   return {
     id: order.id,
     orderId: order.id,
-    orderNumber: order.order_number,
     tableId: order.table?.table_code ?? null,
     tableDbId: order.table?.id ?? order.table_id ?? null,
     customer: {
       name: order.customer_name || 'Guest',
     },
-    paymentMethod: null,
+    paymentMethod: order.payment_method ?? null,
+    paymentStatus: order.payment_status ?? null,
     status,
     statusLabel: titleCase(status),
     createdAt: order.created_at,
     items,
-    subtotal: Number(order.subtotal) || 0,
-    taxAmount: Number(order.tax_amount) || 0,
+    tax: Number(order.tax) || 0,
     serviceCharge: Number(order.service_charge) || 0,
     total,
   };
@@ -95,8 +93,9 @@ export async function createOrder(payload) {
 export async function addOrderItems(orderId, items) {
   const rows = items.map((item) => ({
     order_id: orderId,
-    menu_item_id: item.menu_item_id ?? item.product_id,
+    menu_item_id: item.menu_item_id,
     quantity: item.quantity,
+    price: item.unit_price,
     unit_price: item.unit_price,
     line_total: item.unit_price * item.quantity,
     notes: (item.preferences ?? []).join(', ') || null,
@@ -176,6 +175,19 @@ export async function updateOrderStatus(orderId, status) {
   const { error } = await supabase
     .from('orders')
     .update({ status: nextStatus })
+    .eq('id', orderId);
+
+  if (error) {
+    throw error;
+  }
+
+  return getOrderById(orderId);
+}
+
+export async function confirmPayment(orderId) {
+  const { error } = await supabase
+    .from('orders')
+    .update({ payment_status: 'paid', status: 'served' })
     .eq('id', orderId);
 
   if (error) {

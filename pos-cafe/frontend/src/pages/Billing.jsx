@@ -3,13 +3,15 @@ import { Button } from '../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import KitchenStatusBadge from '../components/KitchenStatusBadge';
 import { useAppState } from '../context/AppStateContext';
+import { confirmPayment } from '../services/orderService';
+import { updateTableStatus } from '../services/tableService';
 import { downloadTicketPDF } from '../utils/generateTicketPDF';
 import { formatCurrency } from '../utils/helpers';
 
 const FILTERS = ['all', 'pending', 'preparing', 'cooking', 'ready'];
 
 export default function Billing() {
-  const { liveOrders, refreshOrders, syncKitchenTicketStatus } = useAppState();
+  const { liveOrders, refreshOrders } = useAppState();
   const [filter, setFilter] = useState('all');
   const [selectedOrderId, setSelectedOrderId] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -20,9 +22,15 @@ export default function Billing() {
     void refreshOrders();
   }, [refreshOrders]);
 
+  // Show only orders with pending payment (exclude already-paid)
+  const pendingPaymentOrders = useMemo(
+    () => liveOrders.filter((order) => order.paymentStatus !== 'paid'),
+    [liveOrders],
+  );
+
   const filteredOrders = useMemo(
-    () => (filter === 'all' ? liveOrders.filter((order) => order.status !== 'served') : liveOrders.filter((order) => order.status === filter)),
-    [filter, liveOrders],
+    () => (filter === 'all' ? pendingPaymentOrders : pendingPaymentOrders.filter((order) => order.status === filter)),
+    [filter, pendingPaymentOrders],
   );
 
   useEffect(() => {
@@ -65,11 +73,16 @@ export default function Billing() {
     setMessage('');
 
     try {
-      const updatedOrder = await syncKitchenTicketStatus(selectedOrder.id, 'served');
+      const updatedOrder = await confirmPayment(selectedOrder.id);
+
+      // Release table
+      if (updatedOrder.tableDbId) {
+        await updateTableStatus(updatedOrder.tableDbId, 'available');
+      }
+
       handleDownload(updatedOrder);
-      setMessage(`Payment confirmed for order ${updatedOrder.id}. Invoice downloaded and table released.`);
+      setMessage(`Payment confirmed for order ${String(updatedOrder.id).slice(0, 8)}. Invoice downloaded and table released.`);
       await refreshOrders();
-      setSelectedOrderId(updatedOrder.id);
     } catch (err) {
       setError(err.message || 'Unable to confirm the payment.');
     } finally {
@@ -156,7 +169,7 @@ export default function Billing() {
                 <div className="grid gap-3 md:grid-cols-2">
                   {[
                     { label: 'Order ID', value: String(selectedOrder.id).slice(0, 12) },
-                    { label: 'Payment', value: selectedOrder.paymentMethod, badge: 'Invoice ready' },
+                    { label: 'Payment', value: selectedOrder.paymentMethod || 'Not set', badge: selectedOrder.paymentStatus === 'paid' ? 'Paid' : 'Pending' },
                     { label: 'Customer', value: selectedOrder.customer.name },
                     { label: 'Table', value: selectedOrder.tableId },
                   ].map((field) => (
@@ -194,8 +207,8 @@ export default function Billing() {
 
                 <div className="flex flex-wrap justify-end gap-2">
                   <Button variant="outline" onClick={() => handleDownload(selectedOrder)}>Download invoice</Button>
-                  <Button disabled={busy || selectedOrder.status === 'served'} onClick={() => void handleConfirmPayment()}>
-                    {busy ? 'Confirming...' : selectedOrder.status === 'served' ? 'Already paid' : 'Confirm payment'}
+                  <Button disabled={busy || selectedOrder.paymentStatus === 'paid'} onClick={() => void handleConfirmPayment()}>
+                    {busy ? 'Confirming...' : selectedOrder.paymentStatus === 'paid' ? 'Already paid' : 'Confirm payment'}
                   </Button>
                 </div>
               </>

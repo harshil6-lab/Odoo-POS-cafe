@@ -1,6 +1,6 @@
 import { supabase } from './supabaseClient';
 
-const productSelect = 'id, name, price, image_url, available, category:categories(id, name)';
+const productSelect = 'id, name, price, image_url, is_available, category:categories(id, name)';
 
 const fallbackImages = {
   Coffee: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=900&q=80',
@@ -25,8 +25,8 @@ function mapMenuItem(item) {
     category,
     price: Number(item.price ?? 0),
     imageUrl: item.image_url || fallbackImages[category] || fallbackImages.Drinks,
-    isAvailable: Boolean(item.available),
-    status: item.available ? 'Available' : 'Sold out',
+    isAvailable: Boolean(item.is_available),
+    status: item.is_available ? 'Available' : 'Sold out',
     options: [],
   };
 }
@@ -55,7 +55,7 @@ export async function updateMenuItemAvailability(menuItemId, isAvailable) {
   const { data, error } = await supabase
     .from('menu_items')
     .update({
-      available: Boolean(isAvailable),
+      is_available: Boolean(isAvailable),
     })
     .eq('id', menuItemId)
     .select(productSelect)

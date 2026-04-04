@@ -82,6 +82,7 @@ export default function Checkout() {
           order_id: newOrder.id,
           menu_item_id: item.id,
           quantity: item.quantity,
+          price: item.price,
           unit_price: item.price,
           line_total: parseFloat((item.price * item.quantity).toFixed(2)),
           notes: item.preferences?.join(', ') || null,
