@@ -1,134 +1,59 @@
-import { clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
+import { clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
 
-export const cn = (...inputs) => twMerge(clsx(inputs));
+export function cn(...inputs) {
+  return twMerge(clsx(inputs));
+}
 
-export const classNames = cn;
-
-export const currencyFormatter = new Intl.NumberFormat('en-IN', {
-  style: 'currency',
-  currency: 'INR',
-  maximumFractionDigits: 0,
-});
-
-export const numberFormatter = new Intl.NumberFormat('en-IN');
-
-export const formatCurrency = (value) => currencyFormatter.format(Number(value ?? 0));
-
-export const formatNumber = (value) => numberFormatter.format(Number(value ?? 0));
-
-export const formatDateTime = (value) => {
-  if (!value) {
-    return '--';
-  }
-
-  return new Intl.DateTimeFormat('en-IN', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  }).format(new Date(value));
-};
-
-export const slugify = (value = '') =>
-  value
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '');
-
-export const calculateOrderTotals = (items, discountAmount = 0) => {
-  const subtotal = items.reduce(
-    (sum, item) => sum + Number(item.unitPrice ?? item.price ?? 0) * Number(item.quantity ?? 0),
-    0,
-  );
-  const appliedDiscount = Math.min(discountAmount, subtotal);
-  const taxableAmount = Math.max(subtotal - appliedDiscount, 0);
-  const taxAmount = taxableAmount * 0.05;
-  const serviceCharge = taxableAmount * 0.03;
-  const total = taxableAmount + taxAmount + serviceCharge;
-
-  return {
-    subtotal,
-    discountAmount: appliedDiscount,
-    taxableAmount,
-    taxAmount,
-    serviceCharge,
-    total,
-  };
-};
-
-export const getStatusTone = (status) => {
-  const map = {
-    available: 'bg-emerald-500/15 text-emerald-300 border-emerald-400/20',
-    occupied: 'bg-amber-500/15 text-amber-300 border-amber-400/20',
-    reserved: 'bg-sky-500/15 text-sky-300 border-sky-400/20',
-    cleaning: 'bg-slate-500/15 text-slate-300 border-slate-400/20',
-    'to-cook': 'bg-amber-500/15 text-amber-300 border-amber-400/20',
-    preparing: 'bg-teal-500/15 text-teal-300 border-teal-400/20',
-    completed: 'bg-emerald-500/15 text-emerald-300 border-emerald-400/20',
-    paid: 'bg-emerald-500/15 text-emerald-300 border-emerald-400/20',
-    pending: 'bg-rose-500/15 text-rose-300 border-rose-400/20',
-  };
-
-  return map[status] ?? 'bg-slate-500/15 text-slate-300 border-slate-400/20';
-};
-
-export const getInitials = (value = '') =>
-  value
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((segment) => segment[0]?.toUpperCase())
-    .join('');
-
-export const toSentenceCase = (value = '') =>
-  value
-    .replace(/[-_]/g, ' ')
-    .replace(/\b\w/g, (char) => char.toUpperCase());
-
-export const cloneValue = (value) => {
-  if (typeof structuredClone === 'function') {
-    return structuredClone(value);
-  }
-
-  return JSON.parse(JSON.stringify(value));
-};
-
-export const buildCsv = (rows) => {
-  if (!rows.length) {
-    return '';
-  }
-
-  const headers = Object.keys(rows[0]);
-  const lines = rows.map((row) => headers.map((header) => JSON.stringify(row[header] ?? '')).join(','));
-  return [headers.join(','), ...lines].join('\n');
-};
-export const classNames = (...classes) => classes.filter(Boolean).join(' ');
-
-export const formatCurrency = (value) =>
-  new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
+export function formatCurrency(value) {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
     maximumFractionDigits: 2,
   }).format(Number(value ?? 0));
+}
 
-export const formatDateTime = (value) => {
-  if (!value) {
-    return '--';
+export function formatElapsedTime(minutes = 0) {
+  const totalMinutes = Math.max(0, Math.floor(Number(minutes) || 0));
+  const hours = Math.floor(totalMinutes / 60);
+  const remainingMinutes = totalMinutes % 60;
+
+  if (hours > 0) {
+    return `${hours}h ${remainingMinutes}m`;
   }
 
-  return new Intl.DateTimeFormat('en-IN', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  }).format(new Date(value));
-};
+  return `${remainingMinutes}m`;
+}
 
-export const calculateOrderTotals = (items) => {
-  const subtotal = items.reduce(
-    (sum, item) => sum + Number(item.unit_price ?? item.price ?? 0) * Number(item.quantity ?? 0),
-    0,
-  );
-  const taxAmount = subtotal * 0.05;
-  const serviceCharge = subtotal * 0.02;
+export function summarizeItems(items = [], maxItems = 3) {
+  const names = items.slice(0, maxItems).map((item) => {
+    if (typeof item === "string") {
+      return item;
+    }
+
+    if (item.quantity && item.name) {
+      return `${item.quantity}x ${item.name}`;
+    }
+
+    return item.name || "Item";
+  });
+
+  if (items.length > maxItems) {
+    names.push(`+${items.length - maxItems} more`);
+  }
+
+  return names.join(", ");
+}
+
+export function calculateOrderTotals(items = [], taxRate = 0.08, serviceRate = 0.02) {
+  const subtotal = items.reduce((sum, item) => {
+    const unitPrice = Number(item.unit_price ?? item.price ?? 0);
+    const quantity = Number(item.quantity ?? item.qty ?? 0);
+    return sum + unitPrice * quantity;
+  }, 0);
+
+  const taxAmount = subtotal * taxRate;
+  const serviceCharge = subtotal * serviceRate;
   const total = subtotal + taxAmount + serviceCharge;
 
   return {
@@ -137,29 +62,33 @@ export const calculateOrderTotals = (items) => {
     serviceCharge,
     total,
   };
-};
+}
 
-export const getStatusBadgeClass = (status) => {
-  const colorMap = {
-    available: 'bg-emerald-100 text-emerald-800',
-    occupied: 'bg-amber-100 text-amber-800',
-    reserved: 'bg-sky-100 text-sky-800',
-    cleaning: 'bg-slate-100 text-slate-700',
-    pending: 'bg-amber-100 text-amber-800',
-    preparing: 'bg-blue-100 text-blue-800',
-    ready: 'bg-emerald-100 text-emerald-800',
-    served: 'bg-violet-100 text-violet-800',
-    completed: 'bg-slate-100 text-slate-700',
-    cancelled: 'bg-rose-100 text-rose-800',
+export function getTableStatusTone(status) {
+  const tones = {
+    available: "border-teal-400/20 bg-teal-400/10 text-teal-300",
+    occupied: "border-amber-500/20 bg-amber-500/10 text-amber-300",
+    reserved: "border-violet-400/20 bg-violet-400/10 text-violet-200",
+    cleaning: "border-rose-500/20 bg-rose-500/10 text-rose-300",
   };
 
-  return colorMap[status] ?? 'bg-slate-100 text-slate-700';
-};
+  return tones[status] || "border-slate-700 bg-slate-800 text-slate-300";
+}
 
-export const getInitials = (value = '') =>
-  value
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join('');
+export function getOrderStatusTone(status) {
+  const tones = {
+    active: "border-amber-500/20 bg-amber-500/10 text-amber-300",
+    completed: "border-teal-400/20 bg-teal-400/10 text-teal-300",
+    dine_in: "border-sky-400/20 bg-sky-400/10 text-sky-300",
+    takeaway: "border-fuchsia-400/20 bg-fuchsia-400/10 text-fuchsia-300",
+    delivery: "border-orange-400/20 bg-orange-400/10 text-orange-300",
+    new: "border-rose-500/20 bg-rose-500/10 text-rose-300",
+    preparing: "border-amber-500/20 bg-amber-500/10 text-amber-300",
+    ready: "border-teal-400/20 bg-teal-400/10 text-teal-300",
+    paid: "border-teal-400/20 bg-teal-400/10 text-teal-300",
+    split: "border-violet-400/20 bg-violet-400/10 text-violet-200",
+    pending: "border-slate-700 bg-slate-800 text-slate-300",
+  };
+
+  return tones[status] || "border-slate-700 bg-slate-800 text-slate-300";
+}

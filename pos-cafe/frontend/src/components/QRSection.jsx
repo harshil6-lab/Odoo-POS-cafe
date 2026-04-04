@@ -1,41 +1,74 @@
-import { QrCode, ScanLine, Smartphone } from 'lucide-react';
+import { ArrowRightLeft, ChefHat, CreditCard, QrCode, ReceiptIndianRupee } from "lucide-react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/Card"
 
-function QRSection() {
+const workflow = [
+  {
+    title: "Customer scans QR",
+    description: "Table-side ordering starts from the guest device with menu visibility and item notes.",
+    icon: QrCode,
+  },
+  {
+    title: "Waiter confirms order",
+    description: "Floor staff validates additions, modifiers, and routing before the ticket is sent live.",
+    icon: ArrowRightLeft,
+  },
+  {
+    title: "Kitchen prepares items",
+    description: "Kitchen display organizes tickets into cook, preparing, and completed states.",
+    icon: ChefHat,
+  },
+  {
+    title: "Cashier processes payment",
+    description: "Cash, card, and UPI payments are recorded with clear session accountability.",
+    icon: CreditCard,
+  },
+  {
+    title: "Manager views analytics",
+    description: "Dashboards surface revenue movement, table turnover, and shift-level performance instantly.",
+    icon: ReceiptIndianRupee,
+  },
+]
+
+export default function QRSection() {
   return (
-    <section className="section-shell py-16 sm:py-20">
-      <div className="grid items-center gap-8 rounded-[2rem] border border-white/10 bg-slate-900/70 p-8 lg:grid-cols-[0.85fr,1.15fr] lg:p-10">
-        <div className="rounded-[1.75rem] border border-dashed border-brand-500/30 bg-gradient-to-br from-brand-500/10 to-teal-400/10 p-8">
-          <div className="mx-auto grid h-48 w-48 grid-cols-5 gap-2 rounded-[1.75rem] bg-slate-950 p-4">
-            {Array.from({ length: 25 }).map((_, index) => (
-              <span key={index} className={`rounded-md ${index % 2 === 0 || index % 7 === 0 ? 'bg-brand-400' : 'bg-white/10'}`} />
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.35em] text-teal-300">QR ordering</p>
-          <h2 className="section-title mt-4">Guests scan, browse, and order without waiting for the bill folder.</h2>
-          <p className="section-copy mt-4">
-            Every table can show a QR experience for self-ordering, while staff still control fulfillment, payments, and customer communication from the main POS.
+    <section className="landing-section border-t border-slate-900 bg-slate-950">
+      <div className="container mx-auto px-6 lg:px-8">
+        <div className="max-w-3xl">
+          <p className="section-kicker">Workflow orchestration</p>
+          <h2 className="section-heading mt-5">One service flow from table scan to revenue visibility</h2>
+          <p className="section-body mt-6">
+            The portal is structured around the actual restaurant workflow, not a brochure. Every role enters the same operating system from a mode built for that part of service.
           </p>
-
-          <div className="mt-8 grid gap-4 sm:grid-cols-3">
-            {[
-              { icon: QrCode, title: 'Scan from table', copy: 'Open a mobile-first menu instantly.' },
-              { icon: Smartphone, title: 'Add to cart', copy: 'Review items, notes, and totals before checkout.' },
-              { icon: ScanLine, title: 'Sync with kitchen', copy: 'Orders land in realtime on the kitchen board.' },
-            ].map((item) => (
-              <div key={item.title} className="rounded-[1.5rem] border border-white/10 bg-white/5 p-5">
-                <item.icon className="h-6 w-6 text-brand-300" />
-                <h3 className="mt-4 text-lg font-semibold text-white">{item.title}</h3>
-                <p className="mt-2 text-sm text-slate-400">{item.copy}</p>
-              </div>
-            ))}
-          </div>
+        </div>
+        <div className="mt-14 grid cards-gap md:grid-cols-2 xl:grid-cols-5">
+          {workflow.map((step, index) => {
+            const Icon = step.icon
+            return (
+              <Card key={step.title} className="relative overflow-hidden">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-800 bg-slate-950 text-teal-400">
+                      <Icon className="h-5 w-5" />
+                    </div>
+                    <span className="font-accent text-xs uppercase tracking-[0.28em] text-slate-500">0{index + 1}</span>
+                  </div>
+                  <CardTitle className="font-display text-2xl">{step.title}</CardTitle>
+                  <CardDescription className="text-base leading-7 text-slate-400">
+                    {step.description}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-28 rounded-2xl border border-slate-800 bg-[linear-gradient(135deg,rgba(15,23,42,0.95),rgba(30,41,59,0.55))] p-4">
+                    <div className="flex h-full items-end rounded-xl border border-dashed border-slate-700 px-3 py-2">
+                      <p className="font-accent text-xs uppercase tracking-[0.28em] text-slate-500">Restaurant workflow placeholder</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          })}
         </div>
       </div>
     </section>
-  );
+  )
 }
-
-export default QRSection;

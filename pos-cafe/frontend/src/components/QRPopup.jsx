@@ -1,22 +1,18 @@
-import { Smartphone } from 'lucide-react';
 import { formatCurrency } from '../utils/helpers';
 
 function QRPopup({ total }) {
   return (
-    <div className="rounded-[1.75rem] border border-dashed border-brand-500/30 bg-brand-500/10 p-5">
-      <div className="mx-auto grid h-40 w-40 grid-cols-5 gap-1 rounded-[1.5rem] bg-slate-950 p-3 shadow-sm">
+    <div className="rounded-2xl border border-slate-800 bg-slate-950 p-5 shadow-lg">
+      <div className="mx-auto grid h-40 w-40 grid-cols-5 gap-1 rounded-2xl border border-slate-800 bg-white p-3 shadow-sm">
         {Array.from({ length: 25 }).map((_, index) => (
           <div
             key={index}
-            className={`rounded-sm ${index % 2 === 0 || index % 7 === 0 ? 'bg-brand-400' : 'bg-white/10'}`}
+            className={`rounded-sm ${index % 2 === 0 || index % 7 === 0 ? 'bg-slate-900' : 'bg-slate-200'}`}
           />
         ))}
       </div>
-      <div className="mt-4 flex items-center justify-center gap-2 text-sm font-semibold text-white">
-        <Smartphone className="h-4 w-4 text-teal-300" />
-        Scan to pay {formatCurrency(total)}
-      </div>
-      <p className="mt-2 text-center text-xs text-slate-400">Connect a UPI provider or replace this placeholder with a generated QR payload.</p>
+      <p className="mt-4 text-center font-display text-2xl font-semibold text-white">Scan to pay {formatCurrency(total)}</p>
+      <p className="mt-2 text-center text-sm text-slate-400">Connect a UPI provider or replace this placeholder with a generated QR payload.</p>
     </div>
   );
 }

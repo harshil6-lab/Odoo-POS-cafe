@@ -1,36 +1,104 @@
-import { useRealtimeOrders } from '../hooks/useRealtimeOrders';
+import { useEffect, useState } from 'react';
+import { CheckCircle2, CookingPot, Sparkles } from 'lucide-react';
 import { formatCurrency } from '../utils/helpers';
 
-function CustomerDisplay() {
-  const { orders } = useRealtimeOrders({ statuses: ['ready', 'served'] });
+const ORDER = {
+  id: '4051',
+  table: 'Table 05',
+  items: [
+    { name: 'Signature Cappuccino', quantity: 2, price: 220 },
+    { name: 'Butter Croissant', quantity: 1, price: 140 },
+  ],
+  subtotal: 580,
+  tax: 46.4,
+  total: 626.4,
+};
+
+export default function CustomerDisplay() {
+  const [stage, setStage] = useState('preparing');
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setStage('ready'), 3500);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   return (
-    <div className="min-h-screen bg-slate-950 px-6 py-10 text-white sm:px-10">
-      <div className="mx-auto max-w-7xl space-y-8">
-        <header className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.4em] text-brand-300">Customer display</p>
-            <h1 className="mt-4 text-5xl font-bold">Orders ready for pickup</h1>
+    <div className="grid min-h-screen bg-slate-950 text-white lg:grid-cols-[1.2fr,0.8fr]">
+      <div className="flex flex-col justify-center border-b border-slate-800 bg-[radial-gradient(circle_at_top,_rgba(245,158,11,0.18),_transparent_28%),linear-gradient(180deg,rgba(15,23,42,0.96),rgba(2,6,23,1))] p-10 lg:border-b-0 lg:border-r lg:p-16">
+        <div className="max-w-3xl">
+          <p className="font-accent text-xs uppercase tracking-[0.3em] text-slate-500">Customer display</p>
+          <h1 className="mt-6 font-display text-6xl font-semibold leading-none">{stage === 'ready' ? 'Your order is ready' : 'Your order is being prepared'}</h1>
+          <p className="mt-6 max-w-2xl text-xl leading-9 text-slate-400">Large-format display for dine-in guests with clear order summary and motion states for service updates.</p>
+        </div>
+
+        <div className="mt-14 flex items-center gap-8">
+          {stage === 'preparing' ? (
+            <div className="relative flex h-40 w-40 items-center justify-center rounded-full border border-amber-500/20 bg-amber-500/10">
+              <div className="absolute inset-0 animate-ping rounded-full border border-amber-500/30" />
+              <CookingPot className="h-16 w-16 animate-pulse text-amber-400" />
+            </div>
+          ) : (
+            <div className="relative flex h-40 w-40 items-center justify-center rounded-full border border-teal-400/20 bg-teal-400/10">
+              <div className="absolute inset-0 animate-pulse rounded-full border border-teal-400/30" />
+              <CheckCircle2 className="h-16 w-16 animate-bounce text-teal-300" />
+            </div>
+          )}
+
+          <div className="rounded-[2rem] border border-slate-800 bg-slate-900 p-8 shadow-lg">
+            <p className="font-accent text-xs uppercase tracking-[0.28em] text-slate-500">Status</p>
+            <p className={`mt-4 font-display text-4xl font-semibold ${stage === 'ready' ? 'text-teal-300' : 'text-amber-400'}`}>
+              {stage === 'ready' ? 'Pickup / Serve now' : 'Barista & kitchen in progress'}
+            </p>
+            <p className="mt-4 text-lg leading-8 text-slate-400">
+              {stage === 'ready'
+                ? 'Please proceed to the cashier counter or wait for your server.'
+                : 'Your items are in the queue. We will update this screen automatically.'}
+            </p>
           </div>
-          <p className="text-lg text-slate-300">Live from Supabase Realtime</p>
-        </header>
+        </div>
+      </div>
 
-        <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-          {orders.map((order) => (
-            <article key={order.id} className="rounded-[2rem] border border-white/10 bg-white/5 p-8 backdrop-blur">
-              <p className="text-sm uppercase tracking-[0.3em] text-brand-300">{order.status}</p>
-              <h2 className="mt-4 text-6xl font-black">#{order.order_number}</h2>
-              <p className="mt-4 text-lg text-slate-300">{order.customer_name || order.table?.name || 'Guest'}</p>
-              <p className="mt-2 text-sm text-slate-400">{order.items?.length || 0} items</p>
-              <p className="mt-6 text-xl font-semibold text-white">{formatCurrency(order.total_amount)}</p>
-            </article>
-          ))}
-        </section>
+      <div className="flex flex-col bg-slate-900 p-10 lg:p-12">
+        <div className="rounded-[2rem] border border-slate-800 bg-slate-950/70 p-8 shadow-lg">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="font-accent text-xs uppercase tracking-[0.28em] text-slate-500">Order summary</p>
+              <h2 className="mt-3 font-display text-4xl font-semibold text-white">#{ORDER.id}</h2>
+            </div>
+            <div className="rounded-full border border-slate-800 bg-slate-900 px-4 py-2 font-accent text-xs uppercase tracking-[0.24em] text-slate-300">
+              {ORDER.table}
+            </div>
+          </div>
 
-        {!orders.length ? <p className="text-xl text-slate-400">No completed kitchen tickets yet.</p> : null}
+          <div className="mt-8 space-y-4">
+            {ORDER.items.map((item) => (
+              <div key={item.name} className="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-900 p-4">
+                <div>
+                  <p className="font-display text-2xl font-semibold text-white">{item.quantity}x {item.name}</p>
+                  <p className="mt-2 text-sm text-slate-400">Prepared fresh for dine-in service</p>
+                </div>
+                <p className="text-2xl font-semibold text-amber-400">{formatCurrency(item.quantity * item.price)}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-8 space-y-3 border-t border-slate-800 pt-6 text-lg text-slate-400">
+            <div className="flex justify-between"><span>Subtotal</span><span>{formatCurrency(ORDER.subtotal)}</span></div>
+            <div className="flex justify-between"><span>Tax</span><span>{formatCurrency(ORDER.tax)}</span></div>
+            <div className="flex justify-between pt-4 font-display text-4xl font-semibold text-white"><span>Total</span><span className="text-amber-400">{formatCurrency(ORDER.total)}</span></div>
+          </div>
+        </div>
+
+        <div className="mt-6 rounded-[2rem] border border-slate-800 bg-slate-950/70 p-8 shadow-lg">
+          <div className="flex items-start gap-4">
+            <Sparkles className="mt-1 h-6 w-6 text-teal-300" />
+            <div>
+              <p className="font-display text-3xl font-semibold text-white">{stage === 'ready' ? 'Ready animation live' : 'Preparing animation live'}</p>
+              <p className="mt-3 text-base leading-8 text-slate-400">This layout is structured for Supabase realtime updates later, so kitchen status can drive guest-facing motion and payment confirmation states without redesigning the screen.</p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
 }
-
-export default CustomerDisplay;

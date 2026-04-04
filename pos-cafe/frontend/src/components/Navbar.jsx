@@ -1,78 +1,78 @@
-import { Menu, Sparkles } from 'lucide-react';
-import { Link, NavLink } from 'react-router-dom';
-import { getInitials } from '../utils/helpers';
-import { Button } from './ui/button';
+import { Link } from "react-router-dom"
+import { Menu, Coffee, Bell, Search, User, ArrowRight } from "lucide-react"
+import { Button } from "./ui/Button"
+import { Input } from "./ui/Input"
 
-const publicLinks = [
-  { to: '/menu', label: 'Menu' },
-  { to: '/book-table', label: 'Book Table' },
-  { to: '/about', label: 'About' },
-  { to: '/contact', label: 'Contact' },
-];
+const landingNavItems = [
+  { label: "Customer Ordering", to: "/menu" },
+  { label: "Waiter POS", to: "/admin/pos" },
+  { label: "Kitchen Display", to: "/admin/kitchen" },
+  { label: "Cashier Billing", to: "/admin/pos" },
+  { label: "Manager Dashboard", to: "/admin" },
+  { label: "Reports", to: "/admin/reports" },
+  { label: "Settings", to: "/admin/settings" },
+]
 
-function Navbar({ mode = 'dashboard', title, user, onSignOut }) {
-  const displayName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Cafe Operator';
-
-  if (mode === 'landing') {
+export default function Navbar({ isDashboard = false }) {
+  if (isDashboard) {
     return (
-      <header className="sticky top-0 z-40 border-b border-white/10 bg-slate-950/75 backdrop-blur-xl">
-        <div className="section-shell flex items-center justify-between gap-4 py-4">
-          <Link to="/" className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-500 text-slate-950">
-              <Sparkles className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-white">POS Cafe</p>
-              <p className="text-xs uppercase tracking-[0.25em] text-slate-500">Crafted dining operations</p>
-            </div>
-          </Link>
-
-          <nav className="hidden items-center gap-6 lg:flex">
-            {publicLinks.map((link) => (
-              <NavLink key={link.to} to={link.to} className="text-sm font-medium text-slate-300 transition hover:text-white">
-                {link.label}
-              </NavLink>
-            ))}
-          </nav>
-
-          <div className="flex items-center gap-3">
-            <Link to="/admin/dashboard">
-              <Button variant="secondary" className="hidden md:inline-flex">
-                Staff Login
-              </Button>
-            </Link>
-            <Button variant="outline" size="icon" className="lg:hidden" aria-label="Open navigation">
-              <Menu className="h-5 w-5" />
-            </Button>
+      <header className="flex h-16 items-center shrink-0 border-b border-slate-800 bg-slate-900 px-4 md:px-6 shadow-sm sticky top-0 z-40">
+        <div className="flex md:hidden items-center text-amber-500 font-bold gap-2">
+          <Coffee size={24} />
+          <span className="hidden sm:inline">POS CAFE</span>
+        </div>
+        
+        <div className="ml-auto flex items-center gap-4">
+          <div className="hidden md:flex relative w-64">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-500" />
+            <Input 
+              type="search" 
+              placeholder="Search anything..." 
+              className="pl-9 bg-slate-950 border-slate-800 h-9" 
+            />
+          </div>
+          <Button variant="ghost" size="icon" className="relative rounded-full">
+            <Bell size={20} />
+            <span className="absolute top-2 right-2.5 w-2 h-2 bg-amber-500 rounded-full border border-slate-900"></span>
+          </Button>
+          <div className="h-8 w-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center cursor-pointer hover:border-amber-500 transition">
+            <User size={16} className="text-slate-400" />
           </div>
         </div>
       </header>
-    );
+    )
   }
 
+  // Landing Navbar
   return (
-    <header className="panel sticky top-4 z-30 flex flex-wrap items-center justify-between gap-4 px-6 py-5">
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-[0.35em] text-brand-400">POS Cafe Admin</p>
-        <h1 className="mt-2 text-2xl font-bold text-white">{title}</h1>
-      </div>
+    <header className="sticky top-0 z-50 flex h-20 items-center border-b border-slate-800 bg-slate-950/90 px-6 backdrop-blur-md lg:px-12">
+      <Link to="/" className="flex items-center gap-2 text-amber-500 transition hover:text-amber-400">
+        <Coffee size={32} />
+        <span className="font-display text-xl font-semibold tracking-wide text-white">POS CAFE</span>
+      </Link>
+      
+      <nav className="ml-10 hidden items-center gap-6 xl:flex">
+        {landingNavItems.map((item) => (
+          <Link key={item.label} to={item.to} className="font-accent text-sm font-medium text-slate-300 transition hover:text-amber-500">
+            {item.label}
+          </Link>
+        ))}
+      </nav>
 
-      <div className="flex items-center gap-3">
-        <div className="hidden text-right lg:block">
-          <p className="text-sm font-semibold text-white">{displayName}</p>
-          <p className="text-xs text-slate-400">{user?.email}</p>
-        </div>
-        <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-slate-800 text-sm font-bold text-brand-300">
-          {getInitials(displayName) || 'PC'}
-        </div>
-        {onSignOut ? (
-          <Button type="button" variant="secondary" onClick={onSignOut}>
-            Sign out
+      <div className="ml-auto flex items-center gap-4">
+        <Link to="/admin" className="hidden sm:inline-flex">
+          <Button variant="ghost" className="font-accent text-slate-300">Staff Access</Button>
+        </Link>
+        <Link to="/admin/pos">
+          <Button className="rounded-xl px-5 font-accent font-semibold shadow-premium">
+            Open Control Portal
+            <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
-        ) : null}
+        </Link>
+        <Button variant="ghost" size="icon" className="md:hidden">
+          <Menu size={24} />
+        </Button>
       </div>
     </header>
-  );
+  )
 }
-
-export default Navbar;

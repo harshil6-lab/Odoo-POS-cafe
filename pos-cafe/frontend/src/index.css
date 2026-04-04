@@ -1,90 +1,100 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/sora";
+@import url("https://api.fontshare.com/v2/css?f[]=clash-display@400,500,600,700&display=swap");
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  color: #ffffff;
-  background-color: #020617;
-  font-family: 'Inter', sans-serif;
+@layer base {
+  :root {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 38 92% 50%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+
+    --secondary: 172 66% 50%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 38 92% 50%;
+
+    color-scheme: dark;
+  }
 }
 
-* {
-  box-sizing: border-box;
-}
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+  }
 
-html {
-  scroll-behavior: smooth;
-}
+  body {
+    @apply bg-slate-950 text-white;
+    font-family: 'Inter Variable', system-ui, -apple-system, sans-serif;
+  }
 
-body {
-  margin: 0;
-  min-width: 320px;
-  min-height: 100vh;
-  background:
-    radial-gradient(circle at top, rgba(245, 158, 11, 0.18), transparent 20%),
-    radial-gradient(circle at right top, rgba(45, 212, 191, 0.12), transparent 18%),
-    linear-gradient(180deg, #020617 0%, #0f172a 100%);
-  color: #ffffff;
-}
-
-#root {
-  min-height: 100vh;
-}
-
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
-button,
-input,
-select,
-textarea {
-  font: inherit;
-}
-
-::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-
-::-webkit-scrollbar-thumb {
-  border-radius: 9999px;
-  background: rgba(148, 163, 184, 0.35);
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: 'Clash Display', 'Inter Variable', system-ui, sans-serif;
+    letter-spacing: -0.03em;
+  }
 }
 
 @layer components {
-  .panel {
-    @apply rounded-3xl border border-white/10 bg-slate-900/80 shadow-panel backdrop-blur;
+  .landing-hero {
+    @apply py-32;
   }
 
-  .input {
-    @apply w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20;
+  .landing-section {
+    @apply py-24;
   }
 
-  .btn-primary {
-    @apply inline-flex items-center justify-center rounded-2xl bg-brand-500 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-brand-400 disabled:cursor-not-allowed disabled:opacity-60;
+  .cards-gap {
+    @apply gap-10;
   }
 
-  .btn-secondary {
-    @apply inline-flex items-center justify-center rounded-2xl border border-white/10 bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:border-brand-500/60 hover:bg-slate-800;
+  .glass-panel {
+    @apply bg-slate-900/80 backdrop-blur-xl border border-slate-800 shadow-premium;
+  }
+  
+  .dark-card {
+    @apply rounded-2xl border border-slate-800 bg-slate-900 shadow-xl transition-all hover:bg-slate-800;
   }
 
-  .badge {
-    @apply inline-flex items-center rounded-full border border-white/10 px-3 py-1 text-xs font-semibold;
+  .premium-gradient-text {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-amber-400 to-amber-200;
   }
 
-  .section-shell {
-    @apply mx-auto max-w-7xl px-4 sm:px-6 lg:px-8;
+  .section-kicker {
+    @apply font-accent text-xs font-semibold uppercase tracking-[0.32em] text-teal-400;
   }
 
-  .section-title {
-    @apply text-balance text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-5xl;
+  .section-heading {
+    @apply font-display text-4xl font-semibold leading-tight text-white md:text-5xl;
   }
 
-  .section-copy {
-    @apply max-w-2xl text-base leading-7 text-slate-400 sm:text-lg;
+  .section-body {
+    @apply text-base leading-8 text-slate-400 md:text-lg;
   }
 }
