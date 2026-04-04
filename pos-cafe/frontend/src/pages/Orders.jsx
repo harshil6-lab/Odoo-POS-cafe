@@ -1,117 +1,78 @@
 import { useMemo, useState } from 'react';
-import { useRealtimeOrders } from '../hooks/useRealtimeOrders';
-import { updateOrderStatus } from '../services/orderService';
-import { formatCurrency, formatDateTime, getStatusBadgeClass } from '../utils/helpers';
+import { Download, Search } from 'lucide-react';
+import OrderCard from '../components/OrderCard';
+import { Button } from '../components/ui/Button';
+import { Card, CardContent } from '../components/ui/Card';
+import { Input } from '../components/ui/Input';
 
-const filters = ['all', 'pending', 'preparing', 'ready', 'served', 'completed', 'cancelled'];
+const FILTERS = ['Active', 'Completed', 'Dine-in', 'Takeaway', 'Delivery'];
 
-function Orders() {
-  const { orders, loading, error } = useRealtimeOrders();
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [updatingId, setUpdatingId] = useState('');
+const ORDERS = [
+  { id: 'ORD-4051', table: 'T05', items: [{ quantity: 2, name: 'Signature Cappuccino' }, { quantity: 1, name: 'Butter Croissant' }], total: 640, status: 'active', statusLabel: 'Active', type: 'dine_in', typeLabel: 'Dine-in', elapsedMinutes: 14 },
+  { id: 'ORD-4052', table: 'Counter', items: [{ quantity: 1, name: 'Spanish Latte' }, { quantity: 1, name: 'Hazelnut Brownie' }], total: 440, status: 'completed', statusLabel: 'Completed', type: 'takeaway', typeLabel: 'Takeaway', elapsedMinutes: 26 },
+  { id: 'ORD-4053', table: 'T02', items: [{ quantity: 2, name: 'Avocado Toast' }, { quantity: 2, name: 'Iced Matcha' }], total: 1340, status: 'active', statusLabel: 'Preparing', type: 'dine_in', typeLabel: 'Dine-in', elapsedMinutes: 21 },
+  { id: 'ORD-4054', table: 'App', items: [{ quantity: 1, name: 'Truffle Mushroom Melt' }, { quantity: 1, name: 'Cold Brew Tonic' }], total: 710, status: 'active', statusLabel: 'Driver assigned', type: 'delivery', typeLabel: 'Delivery', elapsedMinutes: 12 },
+  { id: 'ORD-4055', table: 'Counter', items: [{ quantity: 1, name: 'Signature Cappuccino' }, { quantity: 2, name: 'Butter Croissant' }], total: 500, status: 'completed', statusLabel: 'Paid', type: 'takeaway', typeLabel: 'Takeaway', elapsedMinutes: 38 },
+];
+
+export default function Orders() {
+  const [activeFilter, setActiveFilter] = useState('Active');
+  const [search, setSearch] = useState('');
 
   const filteredOrders = useMemo(() => {
-    if (statusFilter === 'all') {
-      return orders;
-    }
+    return ORDERS.filter((order) => {
+      const matchesSearch = [order.id, order.table, order.typeLabel].join(' ').toLowerCase().includes(search.toLowerCase());
+      const filterMap = {
+        Active: order.status === 'active',
+        Completed: order.status === 'completed',
+        'Dine-in': order.type === 'dine_in',
+        Takeaway: order.type === 'takeaway',
+        Delivery: order.type === 'delivery',
+      };
 
-    return orders.filter((order) => order.status === statusFilter);
-  }, [orders, statusFilter]);
-
-  const handleStatusChange = async (orderId, status) => {
-    setUpdatingId(orderId);
-
-    try {
-      await updateOrderStatus(orderId, status);
-    } finally {
-      setUpdatingId('');
-    }
-  };
+      return matchesSearch && filterMap[activeFilter];
+    });
+  }, [activeFilter, search]);
 
   return (
-    <div className="space-y-6">
-      <section className="panel p-6">
-        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-brand-500">Orders</p>
-        <h2 className="mt-2 text-2xl font-bold text-slate-950">Service queue</h2>
-
-        <div className="mt-5 flex flex-wrap gap-2">
-          {filters.map((filter) => (
-            <button
-              key={filter}
-              type="button"
-              className={`rounded-full px-4 py-2 text-sm font-semibold ${
-                statusFilter === filter ? 'bg-brand-500 text-white' : 'bg-slate-100 text-slate-700'
-              }`}
-              onClick={() => setStatusFilter(filter)}
-            >
-              {filter}
-            </button>
-          ))}
+    <div className="space-y-6 p-6">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <p className="font-accent text-xs uppercase tracking-[0.28em] text-slate-500">Orders board</p>
+          <h1 className="mt-3 font-display text-4xl font-semibold text-white">Orders</h1>
         </div>
-      </section>
+        <Button className="rounded-2xl font-accent uppercase tracking-[0.18em]">
+          <Download className="mr-2 h-4 w-4" />
+          Export
+        </Button>
+      </div>
 
-      {error ? <p className="rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</p> : null}
-      {loading ? <p className="panel p-6 text-sm text-slate-500">Loading orders...</p> : null}
+      <Card>
+        <CardContent className="space-y-6 p-6">
+          <div className="relative max-w-md">
+            <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+            <Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search order id, table, or channel" className="h-14 rounded-2xl border-slate-800 bg-slate-950 pl-11" />
+          </div>
 
-      <section className="space-y-4">
+          <div className="flex gap-3 overflow-x-auto pb-2">
+            {FILTERS.map((filter) => (
+              <Button key={filter} variant={activeFilter === filter ? 'default' : 'outline'} className="h-12 shrink-0 rounded-2xl px-5 font-accent uppercase tracking-[0.18em]" onClick={() => setActiveFilter(filter)}>
+                {filter}
+              </Button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-6 xl:grid-cols-2">
         {filteredOrders.map((order) => (
-          <article key={order.id} className="panel p-5">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div>
-                <div className="flex flex-wrap items-center gap-3">
-                  <h3 className="text-xl font-bold text-slate-950">#{order.order_number}</h3>
-                  <span className={`badge ${getStatusBadgeClass(order.status)}`}>{order.status}</span>
-                </div>
-                <p className="mt-2 text-sm text-slate-500">
-                  {order.table?.name || 'Walk-in'} • {order.cashier?.full_name || order.cashier?.email || 'Unassigned'}
-                </p>
-              </div>
-
-              <div className="text-right text-sm text-slate-500">
-                <p>{formatDateTime(order.created_at)}</p>
-                <p className="mt-2 text-lg font-semibold text-slate-950">{formatCurrency(order.total_amount)}</p>
-              </div>
-            </div>
-
-            <div className="mt-5 grid gap-4 lg:grid-cols-[1fr,220px]">
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                {order.items?.map((item) => (
-                  <div key={item.id} className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
-                    <p className="font-semibold text-slate-900">{item.product?.name}</p>
-                    <p className="mt-1">Quantity: {item.quantity}</p>
-                    <p className="mt-1">Line total: {formatCurrency(item.line_total)}</p>
-                  </div>
-                ))}
-              </div>
-
-              <div className="space-y-3">
-                <button
-                  type="button"
-                  className="btn-primary w-full"
-                  onClick={() => handleStatusChange(order.id, 'completed')}
-                  disabled={updatingId === order.id}
-                >
-                  Mark completed
-                </button>
-                <button
-                  type="button"
-                  className="btn-secondary w-full"
-                  onClick={() => handleStatusChange(order.id, 'cancelled')}
-                  disabled={updatingId === order.id}
-                >
-                  Cancel order
-                </button>
-              </div>
-            </div>
-          </article>
+          <OrderCard
+            key={order.id}
+            order={order}
+            action={<Button variant="outline" className="rounded-2xl font-accent uppercase tracking-[0.18em]">Open ticket</Button>}
+          />
         ))}
-      </section>
-
-      {!loading && !filteredOrders.length ? (
-        <div className="panel p-8 text-center text-sm text-slate-500">No orders match the selected filter.</div>
-      ) : null}
+      </div>
     </div>
   );
 }
-
-export default Orders;

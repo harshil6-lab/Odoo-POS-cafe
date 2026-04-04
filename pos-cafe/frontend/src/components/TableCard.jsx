@@ -1,38 +1,54 @@
-import { formatCurrency, getStatusBadgeClass } from '../utils/helpers';
+import { Armchair, Clock3, Receipt, UserRound } from 'lucide-react';
+import { formatCurrency, formatElapsedTime, getTableStatusTone } from '../utils/helpers';
 
-function TableCard({ table, activeOrder, onSelect }) {
+function TableCard({ table, isSelected = false, onSelect }) {
   return (
     <button
       type="button"
       onClick={() => onSelect?.(table)}
-      className="panel w-full p-5 text-left transition hover:-translate-y-0.5 hover:border-brand-300"
+      className={`w-full rounded-2xl border p-6 text-left shadow-lg transition-all ${
+        isSelected
+          ? 'border-amber-500 bg-slate-800 ring-2 ring-amber-500/40'
+          : 'border-slate-800 bg-slate-900 hover:-translate-y-0.5 hover:bg-slate-800'
+      }`}
     >
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{table.area || 'Main Floor'}</p>
-          <h3 className="mt-2 text-xl font-bold text-slate-900">{table.name}</h3>
+          <p className="font-accent text-xs uppercase tracking-[0.28em] text-slate-500">Table</p>
+          <h3 className="mt-3 font-display text-4xl font-semibold text-white">{table.label || table.name}</h3>
         </div>
-        <span className={`badge ${getStatusBadgeClass(activeOrder ? 'occupied' : table.status)}`}>
-          {activeOrder ? 'occupied' : table.status}
+        <span className={`rounded-full border px-3 py-1 font-accent text-[11px] uppercase tracking-[0.24em] ${getTableStatusTone(table.status)}`}>
+          {table.status}
         </span>
       </div>
 
-      <div className="mt-6 grid grid-cols-2 gap-3 text-sm text-slate-600">
-        <div>
-          <p className="text-slate-400">Capacity</p>
-          <p className="mt-1 font-semibold text-slate-900">{table.capacity} guests</p>
+      <div className="mt-6 grid gap-4 sm:grid-cols-2">
+        <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
+          <div className="flex items-center gap-2 text-slate-500">
+            <Armchair className="h-4 w-4" />
+            <span className="text-sm">Seats</span>
+          </div>
+          <p className="mt-3 text-2xl font-semibold text-white">{table.seats || table.capacity}</p>
         </div>
-        <div>
-          <p className="text-slate-400">Current bill</p>
-          <p className="mt-1 font-semibold text-slate-900">{formatCurrency(activeOrder?.total_amount)}</p>
+        <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
+          <div className="flex items-center gap-2 text-slate-500">
+            <Receipt className="h-4 w-4" />
+            <span className="text-sm">Order amount</span>
+          </div>
+          <p className="mt-3 text-2xl font-semibold text-amber-400">{formatCurrency(table.orderAmount || 0)}</p>
         </div>
       </div>
 
-      {activeOrder ? (
-        <p className="mt-4 text-sm text-brand-700">Order #{activeOrder.order_number} is {activeOrder.status}.</p>
-      ) : (
-        <p className="mt-4 text-sm text-slate-500">Tap to start or manage an order.</p>
-      )}
+      <div className="mt-6 flex items-center justify-between gap-4 rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm text-slate-400">
+        <div className="flex items-center gap-2 min-w-0">
+          <UserRound className="h-4 w-4 text-teal-400" />
+          <span className="truncate">{table.waiter || 'Unassigned waiter'}</span>
+        </div>
+        <div className="flex items-center gap-2 whitespace-nowrap">
+          <Clock3 className="h-4 w-4 text-amber-400" />
+          <span>{formatElapsedTime(table.elapsedMinutes || 0)}</span>
+        </div>
+      </div>
     </button>
   );
 }

@@ -1,34 +1,38 @@
 /** @type {import('tailwindcss').Config} */
+import defaultTheme from 'tailwindcss/defaultTheme';
+
 export default {
   content: ['./index.html', './src/**/*.{js,jsx}'],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['Inter Variable', ...defaultTheme.fontFamily.sans],
+        display: ['Clash Display', 'Inter Variable', ...defaultTheme.fontFamily.sans],
+        accent: ['Sora Variable', 'Inter Variable', ...defaultTheme.fontFamily.sans],
+      },
       colors: {
-        brand: {
-          50: '#f5f1e8',
-          100: '#e9dcc5',
-          200: '#d9be90',
-          300: '#c89f5b',
-          400: '#b58333',
-          500: '#9d6b1d',
-          600: '#7f5416',
-          700: '#634111',
-          800: '#4a300b',
-          900: '#331f06'
+        slate: {
+          900: '#0f172a',
+          950: '#020617',
         },
-        ink: '#111827',
-        paper: '#f9fafb',
-        success: '#166534',
-        danger: '#b91c1c',
-        warning: '#b45309'
+        amber: {
+          500: '#f59e0b',
+        },
+        teal: {
+          400: '#2dd4bf',
+        },
+        // Semantic mapping
+        background: '#020617', // slate-950
+        card: '#0f172a', // slate-900
+        accent: '#f59e0b', // amber-500
+        secondaryAccent: '#2dd4bf', // teal-400
+        textPrimary: '#ffffff', // white
+        textMuted: '#94a3b8', // slate-400
       },
       boxShadow: {
-        panel: '0 18px 45px rgba(17, 24, 39, 0.08)'
+        'premium': '0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.3)',
       },
-      backgroundImage: {
-        'hero-grid': 'radial-gradient(circle at top left, rgba(157, 107, 29, 0.12), transparent 28%), linear-gradient(135deg, rgba(255,255,255,0.85), rgba(245,241,232,0.9))'
-      }
-    }
+    },
   },
   plugins: [],
 };
