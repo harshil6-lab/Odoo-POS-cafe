@@ -1,47 +1,70 @@
-import { Link } from "react-router-dom"
+import { Coffee } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { useAppState } from '../context/AppStateContext';
 
-const portalLinks = [
-  { label: "Customer ordering", to: "/menu" },
-  { label: "Waiter POS", to: "/admin/pos" },
-  { label: "Kitchen display", to: "/admin/kitchen" },
-  { label: "Cashier billing", to: "/admin/pos" },
-  { label: "Manager dashboard", to: "/admin" },
-  { label: "Reports", to: "/admin/reports" },
-]
+const footerLinks = [
+  { label: 'Menu', to: '/menu' },
+  { label: 'Reserve table', to: '/reserve-table' },
+  { label: 'Floor layout', to: '/floor-layout' },
+  { label: 'Contact', to: '/contact' },
+];
 
 export default function Footer() {
+  const { tables, catalogItems, reservations } = useAppState();
+
   return (
-    <footer className="border-t border-slate-800 bg-slate-950">
-      <div className="container mx-auto grid cards-gap px-6 py-16 md:grid-cols-[1.1fr,0.9fr,0.8fr] lg:px-8">
+    <footer className="border-t border-[#374151] bg-[#111827] text-slate-400">
+      <div className="mx-auto grid max-w-7xl gap-6 px-6 py-10 md:grid-cols-2 xl:grid-cols-4">
         <div>
-          <p className="section-kicker">POS Cafe</p>
-          <h3 className="mt-5 font-display text-3xl font-semibold text-white">
-            Restaurant control portal for floor, kitchen, billing, and reporting.
-          </h3>
-          <p className="mt-6 max-w-lg text-base leading-8 text-slate-400">
-            Single-business operations stack inspired by Odoo POS Cafe, optimized for dine-in service flow and role-based execution.
+          <div className="flex items-center gap-3 text-[#F59E0B]">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#374151] bg-[#111827]">
+              <Coffee className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-base font-semibold text-[#F9FAFB]">Cafe POS Suite</p>
+              <p className="text-sm text-[#9CA3AF]">Restaurant operating system</p>
+            </div>
+          </div>
+          <p className="mt-4 max-w-sm text-sm text-[#9CA3AF]">
+            Premium QR ordering, live kitchen progress, and fast billing for restaurant teams.
           </p>
         </div>
+
         <div>
-          <h4 className="font-accent text-sm font-semibold uppercase tracking-[0.28em] text-slate-300">Portal links</h4>
-          <div className="mt-6 grid gap-4">
-            {portalLinks.map((link) => (
-              <Link key={link.label} to={link.to} className="text-base text-slate-400 transition hover:text-amber-500">
+          <h3 className="text-xl font-medium text-[#F9FAFB]">Quick links</h3>
+          <div className="mt-4 grid gap-3">
+            {footerLinks.map((link) => (
+              <Link key={link.label} to={link.to} className="text-sm text-[#9CA3AF] transition hover:text-[#F9FAFB]">
                 {link.label}
               </Link>
             ))}
+            <Link to="/track-order" className="text-sm text-[#9CA3AF] transition hover:text-[#F9FAFB]">Track order</Link>
           </div>
         </div>
+
         <div>
-          <h4 className="font-accent text-sm font-semibold uppercase tracking-[0.28em] text-slate-300">Access roles</h4>
-          <div className="mt-6 grid gap-4 text-base text-slate-400">
-            <Link to="/admin" className="transition hover:text-amber-500">Staff login</Link>
-            <Link to="/admin" className="transition hover:text-amber-500">Manager login</Link>
-            <Link to="/admin/kitchen" className="transition hover:text-amber-500">Kitchen display</Link>
-            <Link to="/admin/customer-display" className="transition hover:text-amber-500">Customer display</Link>
+          <h3 className="text-xl font-medium text-[#F9FAFB]">Contact info</h3>
+          <div className="mt-4 grid gap-3 text-sm text-[#9CA3AF]">
+            <p>support@cafepossuite.com</p>
+            <p>+91 98765 43210</p>
+            <p>Ground floor service desk</p>
+          </div>
+        </div>
+
+        <div>
+          <h3 className="text-xl font-medium text-[#F9FAFB]">Opening hours</h3>
+          <div className="mt-4 grid gap-3 text-sm text-[#9CA3AF]">
+            <p>Mon to Fri: 8:00 AM to 10:00 PM</p>
+            <p>Sat to Sun: 9:00 AM to 11:00 PM</p>
+            <p>{tables.length} tables, {catalogItems.length} items, {reservations.length} reservations</p>
+            <div className="flex gap-3 pt-1">
+              <a href="https://instagram.com" className="transition hover:text-[#F9FAFB]">Instagram</a>
+              <a href="https://facebook.com" className="transition hover:text-[#F9FAFB]">Facebook</a>
+              <a href="https://x.com" className="transition hover:text-[#F9FAFB]">X</a>
+            </div>
           </div>
         </div>
       </div>
     </footer>
-  )
+  );
 }

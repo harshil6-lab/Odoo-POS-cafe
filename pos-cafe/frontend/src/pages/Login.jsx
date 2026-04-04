@@ -1,19 +1,22 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { Button } from '../components/ui/Button';
+import { Input } from '../components/ui/Input';
+import { supabase } from '../services/supabaseClient';
 
 function Login() {
   const navigate = useNavigate();
-  const { user, signIn } = useAuth();
+  const { user, fetchUserRole, redirectPath, loading: authLoading } = useAuth();
   const [form, setForm] = useState({ email: '', password: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (user) {
-      navigate('/');
+    if (!authLoading && user) {
+      navigate(redirectPath, { replace: true });
     }
-  }, [navigate, user]);
+  }, [authLoading, navigate, redirectPath, user]);
 
   const handleChange = (event) => {
     setForm((current) => ({
@@ -22,90 +25,92 @@ function Login() {
     }));
   };
 
-  const handleSubmit = async (event) => {
+  const handleLogin = async (event) => {
     event.preventDefault();
     setLoading(true);
     setError('');
 
-    try {
-      await signIn(form);
-      navigate('/');
-    } catch (err) {
-      setError(err.message ?? 'Unable to sign in.');
-    } finally {
+    const { data, error: signInError } = await supabase.auth.signInWithPassword({
+      email: form.email,
+      password: form.password,
+    });
+
+    if (signInError) {
+      setError(signInError.message);
       setLoading(false);
+      return;
     }
+
+    const role = await fetchUserRole(data.user.id);
+
+    console.log('Fetched role:', role);
+
+    if (!role) {
+      setError('Only staff accounts can access this app.');
+      setLoading(false);
+      return;
+    }
+
+    if (role === 'manager') navigate('/dashboard');
+    else if (role === 'waiter') navigate('/register');
+    else if (role === 'cashier') navigate('/billing');
+
+    setLoading(false);
   };
 
   return (
-    <div className="grid min-h-screen bg-paper lg:grid-cols-[1.1fr,0.9fr]">
-      <div className="hidden bg-hero-grid p-10 lg:flex lg:flex-col lg:justify-between">
-        <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.4em] text-brand-600">POS Cafe</p>
-          <h1 className="mt-6 max-w-lg text-5xl font-bold leading-tight text-slate-950">
-            Run dining room, kitchen, and checkout from one realtime workspace.
-          </h1>
-          <p className="mt-6 max-w-xl text-lg text-slate-600">
-            Supabase powers secure authentication, live order sync, and an operational data model built for a restaurant floor.
+    <div className="flex min-h-screen items-center justify-center bg-[#0B1220] px-4 py-10">
+      <div className="w-full max-w-[420px] rounded-xl border border-[#374151] bg-[#111827] p-8 shadow-md">
+        <div className="space-y-3">
+          <h1 className="text-2xl font-semibold text-[#F9FAFB]">Sign in</h1>
+          <p className="text-sm text-[#9CA3AF]">
+            Sign in with your real Supabase staff account. Access is limited to manager, waiter, and cashier roles.
+          </p>
+          <p className="rounded-xl border border-[#374151] bg-[#0B1220] px-4 py-3 text-sm text-[#9CA3AF]">
+            Only staff accounts with an assigned role can access this app.
           </p>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-3">
-          {['Realtime kitchen tickets', 'Fast table turnover', 'Payment method tracking'].map((item) => (
-            <div key={item} className="rounded-3xl border border-white/70 bg-white/70 p-5 backdrop-blur">
-              <p className="text-sm font-semibold text-slate-800">{item}</p>
-            </div>
-          ))}
-        </div>
-      </div>
+        <form className="mt-6 space-y-4" onSubmit={handleLogin}>
+          <label className="grid gap-2 text-sm font-medium text-[#F9FAFB]">
+            Email
+            <Input
+              type="email"
+              name="email"
+              placeholder="staff@restaurant.com"
+              value={form.email}
+              onChange={handleChange}
+              required
+              className="h-11 rounded-xl border-[#374151] bg-[#0B1220] text-[#F9FAFB] placeholder:text-[#9CA3AF]"
+            />
+          </label>
 
-      <div className="flex items-center justify-center p-6 sm:p-10">
-        <div className="panel w-full max-w-md p-8">
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-brand-500">Welcome back</p>
-          <h2 className="mt-3 text-3xl font-bold text-slate-950">Sign in to the terminal</h2>
-          <p className="mt-3 text-sm text-slate-500">Use a Supabase Auth account to access the restaurant dashboard.</p>
+          <label className="grid gap-2 text-sm font-medium text-[#F9FAFB]">
+            Password
+            <Input
+              type="password"
+              name="password"
+              placeholder="Enter your password"
+              value={form.password}
+              onChange={handleChange}
+              required
+              className="h-11 rounded-xl border-[#374151] bg-[#0B1220] text-[#F9FAFB] placeholder:text-[#9CA3AF]"
+            />
+          </label>
 
-          <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
-            <label className="block text-sm font-medium text-slate-700">
-              Email
-              <input
-                className="input mt-2"
-                type="email"
-                name="email"
-                placeholder="owner@poscafe.com"
-                value={form.email}
-                onChange={handleChange}
-                required
-              />
-            </label>
+          {error ? <p className="rounded-xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-300">{error}</p> : null}
 
-            <label className="block text-sm font-medium text-slate-700">
-              Password
-              <input
-                className="input mt-2"
-                type="password"
-                name="password"
-                placeholder="Enter your password"
-                value={form.password}
-                onChange={handleChange}
-                required
-              />
-            </label>
+          <Button type="submit" className="h-11 w-full rounded-xl border border-[#F59E0B] bg-[#F59E0B] text-sm text-[#0B1220] hover:bg-[#D97706]" disabled={loading}>
+            {loading ? 'Signing in...' : 'Login'}
+          </Button>
+        </form>
 
-            {error ? <p className="rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</p> : null}
-
-            <button type="submit" className="btn-primary w-full" disabled={loading}>
-              {loading ? 'Signing in...' : 'Sign in'}
-            </button>
-          </form>
-
-          <p className="mt-6 text-sm text-slate-500">
-            Need an account?{' '}
-            <Link className="font-semibold text-brand-600" to="/signup">
-              Create one
-            </Link>
-          </p>
-        </div>
+        <p className="mt-6 text-sm text-[#9CA3AF]">
+          Need an account?{' '}
+          <Link className="font-medium text-[#F59E0B] hover:text-[#D97706]" to="/signup">
+            Create account
+          </Link>
+        </p>
       </div>
     </div>
   );

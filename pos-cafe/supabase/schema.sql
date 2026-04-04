@@ -23,6 +23,10 @@ begin
   end if;
 end $$;
 
+alter type user_role add value if not exists 'customer';
+alter type user_role add value if not exists 'waiter';
+alter type user_role add value if not exists 'chef';
+
 create or replace function public.set_updated_at()
 returns trigger
 language plpgsql
@@ -38,6 +42,15 @@ create table if not exists public.users (
   email text not null unique,
   full_name text not null,
   role user_role not null default 'cashier',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.profiles (
+  id uuid primary key references auth.users (id) on delete cascade,
+  full_name text not null,
+  phone text,
+  role user_role not null default 'customer',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -145,6 +158,12 @@ before update on public.users
 for each row
 execute function public.set_updated_at();
 
+drop trigger if exists trg_profiles_updated_at on public.profiles;
+create trigger trg_profiles_updated_at
+before update on public.profiles
+for each row
+execute function public.set_updated_at();
+
 drop trigger if exists trg_products_updated_at on public.products;
 create trigger trg_products_updated_at
 before update on public.products
@@ -175,6 +194,19 @@ begin
       full_name = excluded.full_name,
       updated_at = now();
 
+  insert into public.profiles (id, full_name, phone, role)
+  values (
+    new.id,
+    coalesce(new.raw_user_meta_data ->> 'full_name', split_part(new.email, '@', 1)),
+    new.raw_user_meta_data ->> 'phone',
+    coalesce((new.raw_user_meta_data ->> 'role')::user_role, 'customer')
+  )
+  on conflict (id) do update
+  set full_name = excluded.full_name,
+      phone = excluded.phone,
+      role = excluded.role,
+      updated_at = now();
+
   return new;
 end;
 $$;
@@ -186,6 +218,7 @@ for each row
 execute function public.handle_new_user();
 
 alter table public.users enable row level security;
+alter table public.profiles enable row level security;
 alter table public.tables enable row level security;
 alter table public.categories enable row level security;
 alter table public.products enable row level security;
@@ -201,6 +234,21 @@ for all
 to authenticated
 using (auth.uid() is not null)
 with check (auth.uid() is not null);
+
+drop policy if exists "users can manage own profile" on public.profiles;
+create policy "users can manage own profile"
+on public.profiles
+for all
+to authenticated
+using (auth.uid() = id)
+with check (auth.uid() = id);
+
+drop policy if exists "anon can insert customer profiles" on public.profiles;
+create policy "anon can insert customer profiles"
+on public.profiles
+for insert
+to anon
+with check (role = 'customer');
 
 drop policy if exists "authenticated users manage tables" on public.tables;
 create policy "authenticated users manage tables"
