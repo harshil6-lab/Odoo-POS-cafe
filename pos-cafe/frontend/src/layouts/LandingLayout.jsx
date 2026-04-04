@@ -6,8 +6,10 @@ export default function LandingLayout() {
   const location = useLocation();
   return (
     <div className="flex min-h-screen w-full max-w-screen flex-col overflow-x-hidden bg-background text-white font-sans">
-      <Navbar isDashboard={false} />
-      <main className="flex-1">
+      <div className="relative z-50">
+        <Navbar isDashboard={false} />
+      </div>
+      <main className="relative z-0 flex-1">
         <AnimatePresence mode="wait">
           <motion.div
             key={location.pathname}

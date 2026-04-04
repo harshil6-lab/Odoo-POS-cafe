@@ -166,7 +166,7 @@ export function AppStateProvider({ children }) {
       }
 
       try {
-        const orders = await getOrders();
+        const orders = await getOrders({ statuses: ['pending', 'preparing', 'cooking', 'ready'] });
 
         if (active) {
           setLiveOrders(orders);
@@ -231,7 +231,7 @@ export function AppStateProvider({ children }) {
   }, []);
 
   const refreshOrders = useCallback(async () => {
-    const orders = await getOrders();
+    const orders = await getOrders({ statuses: ['pending', 'preparing', 'cooking', 'ready'] });
     setLiveOrders(orders);
     return orders;
   }, []);
