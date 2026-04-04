@@ -1,145 +1,130 @@
-import { Bar, BarChart, CartesianGrid, Cell, Legend, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import { useAppState } from '../context/AppStateContext';
 import { formatCurrency } from '../utils/helpers';
-
-const revenueData = [
-  { day: 'Mon', revenue: 42800 },
-  { day: 'Tue', revenue: 46100 },
-  { day: 'Wed', revenue: 43800 },
-  { day: 'Thu', revenue: 50200 },
-  { day: 'Fri', revenue: 57800 },
-  { day: 'Sat', revenue: 66400 },
-  { day: 'Sun', revenue: 61200 },
-];
-
-const hourlyTraffic = [
-  { hour: '08:00', orders: 8 },
-  { hour: '10:00', orders: 19 },
-  { hour: '12:00', orders: 31 },
-  { hour: '14:00', orders: 24 },
-  { hour: '16:00', orders: 15 },
-  { hour: '18:00', orders: 28 },
-  { hour: '20:00', orders: 33 },
-];
-
-const paymentMethods = [
-  { name: 'Cash', value: 18 },
-  { name: 'Card', value: 46 },
-  { name: 'UPI', value: 28 },
-  { name: 'Account', value: 8 },
-];
-
-const topSelling = [
-  { name: 'Signature Cappuccino', sold: 186 },
-  { name: 'Spanish Latte', sold: 161 },
-  { name: 'Butter Croissant', sold: 148 },
-  { name: 'Avocado Toast', sold: 106 },
-];
-
-const COLORS = ['#f59e0b', '#2dd4bf', '#8b5cf6', '#f97316'];
 
 function MetricCard({ label, value, helper }) {
   return (
-    <Card>
-      <CardContent className="p-6">
-        <p className="text-sm text-slate-500">{label}</p>
-        <p className="mt-4 font-display text-4xl font-semibold text-white">{value}</p>
-        <p className="mt-3 text-sm text-slate-400">{helper}</p>
-      </CardContent>
-    </Card>
+    <div className="metric-card">
+      <p className="text-[11px] uppercase tracking-wider text-slate-500">{label}</p>
+      <p className="mt-2 font-display text-2xl font-bold text-white">{value}</p>
+      <p className="mt-1 text-[11px] text-slate-500">{helper}</p>
+    </div>
   );
 }
 
 export default function Reports() {
+  const { catalogItems, liveOrders, reservations, tables } = useAppState();
+
+  const liveOrderValue = useMemo(() => liveOrders.reduce((sum, order) => sum + Number(order.total || 0), 0), [liveOrders]);
+  const paymentMix = useMemo(() => {
+    const counts = liveOrders.reduce((acc, order) => {
+      const key = order.paymentMethod || 'Unknown';
+      acc[key] = (acc[key] || 0) + 1;
+      return acc;
+    }, {});
+
+    return Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  }, [liveOrders]);
+  const topSelling = useMemo(() => {
+    const counts = liveOrders.reduce((acc, order) => {
+      order.items.forEach((item) => {
+        acc[item.name] = (acc[item.name] || 0) + Number(item.quantity || 0);
+      });
+      return acc;
+    }, {});
+
+    return Object.entries(counts)
+      .map(([name, sold]) => ({ name, sold }))
+      .sort((a, b) => b.sold - a.sold)
+      .slice(0, 5);
+  }, [liveOrders]);
+  const statusBreakdown = useMemo(() => {
+    return ['available', 'occupied', 'reserved', 'cleaning'].map((status) => ({
+      status,
+      count: tables.filter((table) => table.status === status).length,
+    }));
+  }, [tables]);
+
   return (
-    <div className="space-y-6 p-6">
-      <div>
-        <p className="font-accent text-xs uppercase tracking-[0.28em] text-slate-500">Reports dashboard</p>
-        <h1 className="mt-3 font-display text-4xl font-semibold text-white">Restaurant analytics</h1>
+    <div className="page-container space-y-6">
+      <div className="glass-card p-6">
+        <div className="flex items-center gap-3">
+          <span className="text-2xl">📊</span>
+          <div>
+            <p className="text-[11px] uppercase tracking-wider text-slate-500">Reports dashboard</p>
+            <h1 className="font-display text-2xl font-bold tracking-tight text-white">Restaurant analytics</h1>
+          </div>
+        </div>
+        <p className="mt-2 text-sm text-slate-400">
+          Metrics derived from live tables, reservations, menu catalog, and active orders.
+        </p>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-4">
-        <MetricCard label="Weekly revenue" value={formatCurrency(369300)} helper="Across all dine-in, takeaway, and delivery channels." />
-        <MetricCard label="Top order hour" value="20:00" helper="Dinner rush remains the strongest traffic window." />
-        <MetricCard label="Average check" value={formatCurrency(684)} helper="Blended across counter and table orders." />
-        <MetricCard label="Payment mix leader" value="Card" helper="Card remains the dominant payment method this week." />
+        <MetricCard label="Live order value" value={formatCurrency(liveOrderValue)} helper="Current active kitchen and billing workload." />
+        <MetricCard label="Open reservations" value={reservations.length} helper="Upcoming reservations currently tracked in the system." />
+        <MetricCard label="Catalog items" value={catalogItems.length} helper="Active menu items available to staff and customer ordering." />
+        <MetricCard label="Leading payment mode" value={paymentMix[0]?.[0] || 'N/A'} helper="Based on current live orders." />
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-display text-3xl">Revenue chart</CardTitle>
-          </CardHeader>
-          <CardContent className="h-80 p-2 pr-6">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={revenueData}>
-                <CartesianGrid stroke="#1e293b" vertical={false} />
-                <XAxis dataKey="day" stroke="#64748b" />
-                <YAxis stroke="#64748b" tickFormatter={(value) => `₹${value / 1000}k`} />
-                <Tooltip contentStyle={{ backgroundColor: '#020617', border: '1px solid #1e293b', borderRadius: '16px' }} formatter={(value) => formatCurrency(value)} />
-                <Line type="monotone" dataKey="revenue" stroke="#f59e0b" strokeWidth={3} dot={{ fill: '#f59e0b', r: 4 }} />
-              </LineChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-display text-3xl">Hourly traffic chart</CardTitle>
-          </CardHeader>
-          <CardContent className="h-80 p-2 pr-6">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={hourlyTraffic}>
-                <CartesianGrid stroke="#1e293b" vertical={false} />
-                <XAxis dataKey="hour" stroke="#64748b" />
-                <YAxis stroke="#64748b" />
-                <Tooltip contentStyle={{ backgroundColor: '#020617', border: '1px solid #1e293b', borderRadius: '16px' }} />
-                <Bar dataKey="orders" radius={[12, 12, 0, 0]} fill="#2dd4bf" />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid gap-6 xl:grid-cols-[0.9fr,1.1fr]">
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-display text-3xl">Payment method chart</CardTitle>
-          </CardHeader>
-          <CardContent className="h-96 p-2">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie data={paymentMethods} innerRadius={80} outerRadius={120} paddingAngle={4} dataKey="value">
-                  {paymentMethods.map((entry, index) => (
-                    <Cell key={entry.name} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip contentStyle={{ backgroundColor: '#020617', border: '1px solid #1e293b', borderRadius: '16px' }} />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-display text-3xl">Top selling items</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4 p-6">
-            {topSelling.map((item, index) => (
-              <div key={item.name} className="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
-                <div>
-                  <p className="font-display text-2xl font-semibold text-white">{item.name}</p>
-                  <p className="mt-2 text-sm text-slate-400">Rank #{index + 1}</p>
-                </div>
-                <div className="text-right">
-                  <p className="font-display text-3xl font-semibold text-amber-400">{item.sold}</p>
-                  <p className="mt-2 text-sm text-slate-400">units sold</p>
-                </div>
+      <div className="grid gap-4 xl:grid-cols-[0.95fr,1.05fr]">
+        <div className="glass-card">
+          <div className="border-b border-white/[0.06] p-5">
+            <h2 className="font-display text-lg font-bold text-white">Table status breakdown</h2>
+          </div>
+          <div className="space-y-2 p-5">
+            {statusBreakdown.map((item) => (
+              <div key={item.status} className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                <p className="text-sm font-medium capitalize text-white">{item.status}</p>
+                <p className="text-lg font-bold text-accent">{item.count}</p>
               </div>
             ))}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
+
+        <div className="glass-card">
+          <div className="border-b border-white/[0.06] p-5">
+            <h2 className="font-display text-lg font-bold text-white">Top selling live items</h2>
+          </div>
+          <div className="space-y-2 p-5">
+            {topSelling.length ? topSelling.map((item, index) => (
+              <div key={item.name} className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                <div>
+                  <p className="text-sm font-medium text-white">{item.name}</p>
+                  <p className="mt-0.5 text-[11px] text-slate-500">Rank #{index + 1}</p>
+                </div>
+                <div className="text-right">
+                  <p className="font-display text-lg font-bold text-accent">{item.sold}</p>
+                  <p className="text-[11px] text-slate-500">units sold</p>
+                </div>
+              </div>
+            )) : (
+              <div className="rounded-xl border border-dashed border-white/[0.06] bg-white/[0.01] p-5 text-sm text-slate-500">
+                No live order items available yet.
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="glass-card">
+        <div className="border-b border-white/[0.06] p-5">
+          <h2 className="font-display text-lg font-bold text-white">Current payment mix</h2>
+        </div>
+        <div className="grid gap-3 p-5 md:grid-cols-2 xl:grid-cols-4">
+          {paymentMix.length ? paymentMix.map(([name, count]) => (
+            <div key={name} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+              <p className="text-[11px] text-slate-500">{name}</p>
+              <p className="mt-1 text-xl font-bold text-white">{count}</p>
+              <p className="mt-0.5 text-[11px] text-slate-500">live orders</p>
+            </div>
+          )) : (
+            <div className="md:col-span-2 xl:col-span-4 rounded-xl border border-dashed border-white/[0.06] bg-white/[0.01] p-5 text-sm text-slate-500">
+              Payment analytics appear once live orders are present.
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

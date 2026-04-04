@@ -3,7 +3,12 @@ import { Float } from "@react-three/drei";
 
 export default function ThreeHero() {
   return (
-    <Canvas style={{ pointerEvents: 'none' }}>
+    <Canvas
+      dpr={[1, 1.5]}
+      frameloop="always"
+      gl={{ antialias: false, powerPreference: 'low-power' }}
+      style={{ pointerEvents: 'none' }}
+    >
       <ambientLight intensity={1.2} />
       <directionalLight position={[2, 5, 2]} />
 

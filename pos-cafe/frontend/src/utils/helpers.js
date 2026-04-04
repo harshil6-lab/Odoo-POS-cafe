@@ -67,8 +67,8 @@ export function calculateOrderTotals(items = [], taxRate = 0.08, serviceRate = 0
 export function getTableStatusTone(status) {
   const tones = {
     available: "border-emerald-400/20 bg-emerald-400/10 text-emerald-300",
-    occupied: "border-amber-500/20 bg-amber-500/10 text-amber-300",
-    reserved: "border-violet-400/20 bg-violet-400/10 text-violet-300",
+    occupied: "border-rose-500/20 bg-rose-500/10 text-rose-300",
+    reserved: "border-yellow-500/20 bg-yellow-500/10 text-yellow-300",
     cleaning: "border-slate-500/20 bg-slate-500/10 text-slate-300",
   };
 

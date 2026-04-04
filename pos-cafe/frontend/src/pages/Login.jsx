@@ -42,34 +42,58 @@ function Login() {
     setLoading(true);
     setError('');
 
-    const { data, error: signInError } = await supabase.auth.signInWithPassword({
-      email: form.email,
-      password: form.password,
-    });
+    try {
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+        email: form.email,
+        password: form.password,
+      });
 
-    if (signInError) {
-      setError(signInError.message);
+      if (signInError) {
+        setError(signInError.message);
+        setLoading(false);
+        return;
+      }
+
+      if (!data?.user) {
+        setError('Login failed: No user data returned.');
+        setLoading(false);
+        return;
+      }
+
+      // CRITICAL: Fetch role IMMEDIATELY after login
+      // This determines where the user is redirected
+      const userRole = await fetchUserRole(data.user.id);
+
+      if (!userRole) {
+        // User logged in but has no staff role
+        await supabase.auth.signOut();
+        setError('Your account does not have a staff role assigned. Contact your manager.');
+        setLoading(false);
+        return;
+      }
+
+      // Log successful role fetch for debugging
+      console.log(`User ${data.user.email} logged in with role: ${userRole}`);
+
+      // Redirect based on role
+      const redirectMap = {
+        manager: '/dashboard',
+        waiter: '/register',
+        cashier: '/billing',
+        chef: '/kitchen',
+        admin: '/dashboard',
+        kitchen: '/kitchen',  // Handle legacy 'kitchen' role
+      };
+
+      const redirectPath = redirectMap[userRole] || '/menu';
+      navigate(redirectPath, { replace: true });
+
       setLoading(false);
-      return;
-    }
-
-    const role = await fetchUserRole(data.user.id);
-
-    console.log('Fetched role:', role);
-
-    if (!role) {
-      setError('Only staff accounts can access this app.');
+    } catch (err) {
+      console.error('Login error:', err);
+      setError(err.message ?? 'Login failed. Please try again.');
       setLoading(false);
-      return;
     }
-
-    if (role === 'manager') navigate('/dashboard');
-    else if (role === 'waiter') navigate('/register');
-    else if (role === 'cashier') navigate('/billing');
-    else if (role === 'chef') navigate('/kitchen');
-    else navigate('/menu');
-
-    setLoading(false);
   };
 
   return (
@@ -87,7 +111,7 @@ function Login() {
       footer={(
         <>
           Need an account?{' '}
-          <Link className="font-semibold text-amber-400" to="/signup">
+          <Link className="font-semibold text-primary hover:text-primary/80" to="/signup">
             Create account
           </Link>
         </>

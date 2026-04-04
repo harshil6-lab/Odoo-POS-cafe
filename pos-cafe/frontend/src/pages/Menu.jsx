@@ -68,21 +68,24 @@ export default function Menu() {
     <div className="bg-background py-10">
       <div className="mx-auto grid max-w-7xl gap-6 px-6 xl:grid-cols-[minmax(0,1fr),380px]">
         <div className="space-y-6">
-          <section className="rounded-xl border border-slate-800 bg-card p-4 shadow-md">
+          <section className="glass-card p-6">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-              <div>
-                <h1 className="text-2xl font-semibold text-white">Cafe menu</h1>
-                <p className="mt-3 text-sm text-text-secondary">
-                  Live menu items are loaded from Supabase. Add items, include preferences, and finish checkout from your table.
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-3">
-                <div className="rounded-full border border-slate-800 bg-background px-4 py-2 text-sm text-white">
-                  {selectedTableId ? `Ordering for Table ${selectedTableId}` : 'Please select your table first'}
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">🍔</span>
+                <div>
+                  <h1 className="font-display text-2xl font-bold tracking-tight text-white">Cafe menu</h1>
+                  <p className="mt-1 text-sm text-slate-400">
+                    Browse our menu, add items with preferences, and checkout from your table.
+                  </p>
                 </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <span className="rounded-full border border-white/[0.06] bg-white/[0.03] px-3 py-1.5 text-xs text-slate-400">
+                  {selectedTableId ? `🪑 Table ${selectedTableId}` : 'No table selected'}
+                </span>
                 <Button
                   variant="outline"
-                  className="h-11 rounded-xl border-slate-800 bg-slate-800 px-5 text-sm text-white hover:bg-card"
+                  size="sm"
                   onClick={() => setShowTablePicker(true)}
                 >
                   Choose table
@@ -90,22 +93,22 @@ export default function Menu() {
               </div>
             </div>
 
-            <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr),auto]">
+            <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1fr),auto]">
               <div className="relative">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-secondary" />
-                <Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search menu items" className="pl-10" />
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+                <Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search menu items..." className="pl-10" />
               </div>
 
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-1.5">
                 {categories.map((category) => (
                   <button
                     key={category}
                     type="button"
                     onClick={() => setActiveCategory(category)}
-                    className={`rounded-xl border px-4 py-2 text-sm transition ${
+                    className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-200 ${
                       activeCategory === category
-                        ? 'border-[#F59E0B] bg-[#F59E0B] text-[#0B1220]'
-                        : 'border-[#374151] bg-[#1F2937] text-[#F9FAFB] hover:bg-[#111827]'
+                        ? 'bg-primary text-white shadow-glow-red'
+                        : 'border border-white/[0.06] bg-white/[0.03] text-slate-400 hover:bg-white/[0.06] hover:text-white'
                     }`}
                   >
                     {category}
@@ -115,12 +118,12 @@ export default function Menu() {
             </div>
           </section>
 
-          <section className="grid gap-6 py-10 md:grid-cols-2 xl:grid-cols-4">
+          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {filteredItems.length ? (
               filteredItems.map((item) => <MenuCard key={item.id} item={item} actionLabel="Add" onAdd={openItemModal} />)
             ) : (
-              <div className="md:col-span-2 xl:col-span-4 rounded-xl border border-dashed border-[#374151] bg-[#111827] p-6 text-sm text-[#9CA3AF]">
-                No menu items match this filter right now.
+              <div className="md:col-span-2 xl:col-span-3 rounded-xl border border-dashed border-white/[0.06] bg-white/[0.01] p-6 text-center text-sm text-slate-500">
+                No menu items match this filter.
               </div>
             )}
           </section>
@@ -145,33 +148,30 @@ export default function Menu() {
         </div>
       </div>
 
+      {/* Table picker modal */}
       {showTablePicker ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0B1220]/80 px-6 backdrop-blur-sm">
-          <div className="w-full max-w-5xl rounded-xl border border-[#374151] bg-[#111827] p-6 shadow-md">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 px-6 backdrop-blur-xl animate-fade-in">
+          <div className="w-full max-w-5xl glass-card p-6">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
               <div>
-                <h2 className="text-2xl font-semibold text-[#F9FAFB]">Please select your table first</h2>
-                <p className="mt-2 text-sm text-[#9CA3AF]">
-                  Each QR code maps to a live table in Supabase. You can also choose the table manually here.
+                <h2 className="font-display text-xl font-bold text-white">Select your table</h2>
+                <p className="mt-1 text-sm text-slate-400">
+                  Each QR code maps to a live table. You can also choose manually.
                 </p>
               </div>
               {selectedTableId ? (
-                <Button
-                  variant="outline"
-                  className="h-11 rounded-xl border-[#374151] bg-[#1F2937] px-5 text-sm text-[#F9FAFB] hover:bg-[#111827]"
-                  onClick={() => setShowTablePicker(false)}
-                >
+                <Button variant="outline" size="sm" onClick={() => setShowTablePicker(false)}>
                   Close
                 </Button>
               ) : null}
             </div>
 
-            <div className="mt-6 max-h-[70vh] overflow-y-auto pr-1">
+            <div className="mt-5 max-h-[70vh] overflow-y-auto pr-1">
               <TableGrid
                 tables={tables}
                 selectedTableId={selectedTableId}
                 actionLabel="Use this table"
-                emptyMessage="No table records were returned from Supabase."
+                emptyMessage="No table records returned from Supabase."
                 onSelect={(table) => {
                   setSelectedTableId(table.id);
                   setShowTablePicker(false);
@@ -182,38 +182,31 @@ export default function Menu() {
         </div>
       ) : null}
 
+      {/* Item preferences modal */}
       {activeItem ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0B1220]/80 px-6 backdrop-blur-sm">
-          <div className="w-full max-w-xl rounded-xl border border-[#374151] bg-[#111827] p-6 shadow-md">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 px-6 backdrop-blur-xl animate-fade-in">
+          <div className="w-full max-w-xl glass-card p-6">
             <div className="grid gap-5 lg:grid-cols-[180px,1fr]">
-              <div className="overflow-hidden rounded-xl border border-[#374151] bg-[#0B1220]">
+              <div className="overflow-hidden rounded-xl border border-white/[0.06] bg-surface">
                 <img src={activeItem.imageUrl} alt={activeItem.name} className="aspect-[4/3] h-full w-full object-cover" />
               </div>
 
               <div>
-                <h2 className="text-2xl font-semibold text-[#F9FAFB]">{activeItem.name}</h2>
-                <p className="mt-2 text-sm text-[#9CA3AF]">Add optional preferences for the kitchen before this item goes into your order.</p>
-                <label className="mt-5 grid gap-2 text-sm text-[#F9FAFB]">
+                <h2 className="font-display text-xl font-bold text-white">{activeItem.name}</h2>
+                <p className="mt-1 text-sm text-slate-400">Add optional preferences for the kitchen.</p>
+                <label className="mt-4 grid gap-1.5 text-xs text-slate-400">
                   Preferences
                   <textarea
                     value={specialRequest}
                     onChange={(event) => setSpecialRequest(event.target.value)}
                     placeholder="Less sugar, extra cheese, no onion"
-                    className="min-h-28 rounded-xl border border-[#374151] bg-[#0B1220] px-3 py-3 text-sm text-[#F9FAFB] outline-none transition focus:border-[#F59E0B]"
+                    className="min-h-24 rounded-xl border border-white/[0.08] bg-surface px-3 py-2.5 text-sm text-white outline-none transition-colors focus:border-primary/50"
                   />
                 </label>
 
-                <div className="mt-6 flex justify-end gap-3">
-                  <Button
-                    variant="outline"
-                    className="h-11 rounded-xl border-[#374151] bg-[#1F2937] px-5 text-sm text-[#F9FAFB] hover:bg-[#111827]"
-                    onClick={() => setActiveItem(null)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button className="h-11 rounded-xl border-[#F59E0B] bg-[#F59E0B] px-5 text-sm text-[#0B1220] hover:bg-[#D97706]" onClick={confirmItem}>
-                    Add to cart
-                  </Button>
+                <div className="mt-5 flex justify-end gap-2">
+                  <Button variant="outline" size="sm" onClick={() => setActiveItem(null)}>Cancel</Button>
+                  <Button size="sm" onClick={confirmItem}>Add to cart</Button>
                 </div>
               </div>
             </div>

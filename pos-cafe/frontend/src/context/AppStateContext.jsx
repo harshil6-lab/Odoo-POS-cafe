@@ -4,6 +4,7 @@ import { calculateOrderTotals } from '../utils/helpers';
 import { getCategories, getMenuItems } from '../services/menuService';
 import { createOrderWithItemsAndPayment, getOrders, updateOrderStatus } from '../services/orderService';
 import { createReservation, getReservations } from '../services/reservationService';
+import { supabase } from '../services/supabaseClient';
 import { getTables, updateTableStatus } from '../services/tableService';
 
 const AppStateContext = createContext(null);
@@ -104,8 +105,6 @@ export function AppStateProvider({ children }) {
     let active = true;
 
     const loadPublicData = async () => {
-      console.log('Supabase URL:', import.meta.env.VITE_SUPABASE_URL);
-
       const results = await Promise.allSettled([
         getMenuItems(),
         getCategories(),
@@ -132,7 +131,6 @@ export function AppStateProvider({ children }) {
       }
 
       if (tableResult.status === 'fulfilled') {
-        console.log('Tables loaded:', tableResult.value.length, 'records');
         setTables(tableResult.value);
       } else {
         console.error('Tables fetch error:', tableResult.reason);
@@ -242,6 +240,27 @@ export function AppStateProvider({ children }) {
     return nextReservations;
   }, []);
 
+  useEffect(() => {
+    const tablesChannel = supabase
+      .channel('app-state-tables')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tables' }, () => {
+        void refreshTables();
+      })
+      .subscribe();
+
+    const reservationsChannel = supabase
+      .channel('app-state-reservations')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'reservations' }, () => {
+        void refreshReservations();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(tablesChannel);
+      supabase.removeChannel(reservationsChannel);
+    };
+  }, [refreshReservations, refreshTables]);
+
   const setSelectedTableId = (tableId) => {
     setSelectedTableIdState(tableId);
   };
@@ -308,9 +327,9 @@ export function AppStateProvider({ children }) {
     return createdReservation;
   };
 
-  const placeOrder = async ({ paymentMethod, releaseTable = false, paymentStatus, paymentId } = {}) => {
-    if (!selectedTableId || !customerDetails.name || !cartItems.length) {
-      throw new Error('Add a table, customer name, and at least one item before checkout.');
+  const placeOrder = async ({ paymentMethod, releaseTable = false } = {}) => {
+    if (!selectedTableId || !cartItems.length) {
+      throw new Error('Add a table and at least one item before checkout.');
     }
 
     const matchedTable = tablesWithStatus.find((table) => table.id === selectedTableId);
@@ -319,28 +338,23 @@ export function AppStateProvider({ children }) {
       throw new Error('Select a valid table before placing the order.');
     }
 
-    const orderPayload = {
-      table_id: matchedTable.dbId,
-      customer_name: customerDetails.name,
-      payment_method: paymentMethod,
-      status: 'pending',
-    };
-
-    if (paymentStatus) {
-      orderPayload.payment_status = paymentStatus;
-    }
-
-    if (paymentId) {
-      orderPayload.payment_id = paymentId;
-    }
+    const finalCustomerName = customerDetails.name?.trim() || 'Guest';
 
     const order = await createOrderWithItemsAndPayment({
-      order: orderPayload,
+      order: {
+        table_id: matchedTable.dbId,
+        customer_name: finalCustomerName,
+        status: 'pending',
+      },
       items: cartItems.map((item) => ({
         menu_item_id: item.id,
         quantity: item.quantity,
+        unit_price: item.price,
         preferences: item.preferences ?? [],
       })),
+      payment: paymentMethod ? {
+        method: paymentMethod === 'UPI QR' ? 'upi_qr' : paymentMethod.toLowerCase(),
+      } : null,
     });
 
     if (releaseTable) {
@@ -356,7 +370,7 @@ export function AppStateProvider({ children }) {
     setLastPlacedOrder({
       ...order,
       customer: {
-        name: customerDetails.name,
+        name: finalCustomerName,
         phone: customerDetails.phone,
       },
       subtotal: totals.subtotal,

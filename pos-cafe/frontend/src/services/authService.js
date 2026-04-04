@@ -106,8 +106,6 @@ export const authService = {
       return null;
     }
 
-    console.log('Role fetch result:', data);
-
     return data?.role ?? null;
   },
 

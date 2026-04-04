@@ -46,84 +46,95 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="rounded-xl border border-slate-800 bg-card p-4 shadow-md">
-        <p className="text-sm text-text-secondary">Dashboard</p>
-        <h1 className="mt-2 text-2xl font-semibold text-white">Welcome back, {displayName}</h1>
-        <p className="mt-3 text-sm text-text-secondary">
+    <div className="page-container space-y-8">
+      {/* Header */}
+      <div className="glass-card p-6">
+        <div className="flex items-center gap-3">
+          <span className="text-2xl">👋</span>
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wider text-slate-500">Dashboard</p>
+            <h1 className="mt-1 font-display text-2xl font-bold tracking-tight text-white">Welcome back, {displayName}</h1>
+          </div>
+        </div>
+        <p className="mt-3 text-sm leading-relaxed text-slate-400">
           Keep an eye on floor activity, kitchen flow, and the latest Supabase orders from one place.
         </p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+      {/* Metric cards */}
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {metrics.map((metric, index) => {
           const Icon = icons[index];
+          const colors = ['text-primary', 'text-accent', 'text-teal-400', 'text-violet-400'];
+          const bgColors = ['bg-primary/10', 'bg-accent/10', 'bg-teal-400/10', 'bg-violet-400/10'];
           return (
-            <Card key={metric.label} className="rounded-xl border-slate-800 bg-card shadow-md transition-shadow hover:shadow-xl">
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-sm text-text-secondary">{metric.label}</p>
-                    <p className="mt-3 text-3xl font-semibold text-white">{metric.value}</p>
-                    <p className="mt-2 text-sm text-text-secondary">{metric.meta}</p>
-                  </div>
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-slate-800 bg-slate-800 text-accent">
-                    <Icon className="h-5 w-5" />
-                  </div>
+            <div key={metric.label} className="metric-card group">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wider text-slate-500">{metric.label}</p>
+                  <p className="mt-2 font-display text-3xl font-bold text-white">{metric.value}</p>
+                  <p className="mt-1 text-xs text-slate-500">{metric.meta}</p>
                 </div>
-              </CardContent>
-            </Card>
+                <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${bgColors[index]} ${colors[index]} transition-transform duration-300 group-hover:scale-110`}>
+                  <Icon className="h-5 w-5" />
+                </div>
+              </div>
+            </div>
           );
         })}
       </div>
 
+      {/* Main grid */}
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr),minmax(0,0.8fr)]">
-        <Card className="rounded-xl border-slate-800 bg-card shadow-md transition-shadow hover:shadow-xl">
-          <CardHeader className="p-4">
-            <CardTitle className="text-2xl font-semibold text-white">Table overview</CardTitle>
+        <Card className="glass-card">
+          <CardHeader className="p-5">
+            <CardTitle className="flex items-center gap-2 font-display text-lg font-semibold">
+              🪑 Table overview
+            </CardTitle>
           </CardHeader>
-          <CardContent className="p-4 pt-0">
+          <CardContent className="p-5 pt-0">
             <TableGrid tables={tables} compact emptyMessage="No live table records were returned from Supabase." />
           </CardContent>
         </Card>
 
         <div className="space-y-6">
-          <Card className="rounded-xl border-slate-800 bg-card shadow-md transition-shadow hover:shadow-xl">
-            <CardHeader className="p-4">
-              <CardTitle className="text-2xl font-semibold text-white">Upcoming reservations</CardTitle>
+          <Card className="glass-card">
+            <CardHeader className="p-5">
+              <CardTitle className="flex items-center gap-2 font-display text-lg font-semibold">
+                📅 Upcoming reservations
+              </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4 p-4 pt-0">
+            <CardContent className="space-y-3 p-5 pt-0">
               {reservations.length ? reservations.slice(0, 4).map((reservation) => (
-                <div key={reservation.id} className="rounded-xl border border-slate-800 bg-slate-800 p-4 shadow-sm">
-                  <p className="text-base font-medium text-white">{reservation.tableId}</p>
-                  <p className="mt-2 text-sm text-text-secondary">{reservation.name} · {reservation.guests} guests</p>
-                  <p className="mt-1 text-sm text-text-secondary">{reservation.date} · {reservation.time}</p>
+                <div key={reservation.id} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 transition-colors hover:bg-white/[0.04]">
+                  <p className="text-sm font-medium text-white">{reservation.tableId}</p>
+                  <p className="mt-1.5 text-xs text-slate-500">{reservation.name} · {reservation.guests} guests</p>
+                  <p className="mt-0.5 text-xs text-slate-500">{reservation.date} · {reservation.time}</p>
                 </div>
-              )) : <p className="text-sm text-slate-400">No reservations have been created yet.</p>}
+              )) : <p className="text-sm text-slate-500">No reservations have been created yet.</p>}
             </CardContent>
           </Card>
 
-          <Card className="rounded-xl border-[#374151] bg-[#111827] shadow-sm">
-            <CardHeader className="p-4">
-              <CardTitle className="flex items-center gap-2 text-2xl font-semibold text-[#F9FAFB]">
-                <Coffee className="h-5 w-5 text-[#F59E0B]" />
+          <Card className="glass-card">
+            <CardHeader className="p-5">
+              <CardTitle className="flex items-center gap-2 font-display text-lg font-semibold">
+                <Coffee className="h-4 w-4 text-accent" />
                 Live orders panel
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4 p-4 pt-0">
+            <CardContent className="space-y-3 p-5 pt-0">
               {liveOrders.length ? liveOrders.slice(0, 6).map((order) => (
-                <div key={order.id} className="rounded-xl border border-[#374151] bg-[#1F2937] p-4 shadow-sm">
-                  <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                    <div className="space-y-2">
-                      <p className="text-base font-semibold text-[#F9FAFB]">Table {order.tableId || 'Walk-in'} · {order.customer.name}</p>
-                      <p className="text-sm text-slate-400">{order.items.length} items · {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                      <p className="text-sm text-slate-400">Order {order.id}</p>
+                <div key={order.id} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 transition-colors hover:bg-white/[0.04]">
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="space-y-1">
+                      <p className="text-sm font-semibold text-white">Table {order.tableId || 'Walk-in'} · {order.customer.name}</p>
+                      <p className="text-xs text-slate-500">{order.items.length} items · {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                     </div>
-                    <div className="flex flex-col gap-3 sm:items-end">
+                    <div className="flex flex-col gap-2 sm:items-end">
                       <KitchenStatusBadge status={order.status} />
                       <select
                         value={order.status}
-                        className="h-10 rounded-lg border border-[#374151] bg-[#0B1220] px-3 text-sm text-[#F9FAFB] outline-none"
+                        className="h-9 rounded-xl border border-white/[0.08] bg-surface px-3 text-xs text-white outline-none"
                         disabled={updatingOrderId === order.id}
                         onChange={(event) => void handleOrderStatusChange(order.id, event.target.value)}
                       >
@@ -134,38 +145,42 @@ export default function Dashboard() {
                     </div>
                   </div>
                 </div>
-              )) : <p className="text-sm text-slate-400">No live orders yet. Place one from the customer flow to see it here.</p>}
+              )) : <p className="text-sm text-slate-500">No live orders yet. Place one from the customer flow to see it here.</p>}
             </CardContent>
           </Card>
         </div>
       </div>
 
-      <Card className="rounded-xl border-[#374151] bg-[#111827] shadow-sm">
-        <CardHeader className="p-4">
-          <CardTitle className="text-2xl font-semibold text-[#F9FAFB]">Menu editor</CardTitle>
+      {/* Menu editor */}
+      <Card className="glass-card">
+        <CardHeader className="p-5">
+          <CardTitle className="flex items-center gap-2 font-display text-lg font-semibold">
+            🍽️ Menu editor
+          </CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-6 p-4 pt-0 md:grid-cols-2 xl:grid-cols-3">
+        <CardContent className="grid gap-4 p-5 pt-0 md:grid-cols-2 xl:grid-cols-3">
           {catalogItems.length ? catalogItems.map((item) => (
-            <div key={item.id} className="rounded-xl border border-[#374151] bg-[#1F2937] p-5 shadow-sm">
+            <div key={item.id} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 transition-all duration-200 hover:bg-white/[0.04]">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-base font-medium text-[#F9FAFB]">{item.name}</p>
-                  <p className="mt-2 text-sm text-slate-400">{item.category} · {formatCurrency(item.price)}</p>
+                  <p className="text-sm font-medium text-white">{item.name}</p>
+                  <p className="mt-1 text-xs text-slate-500">{item.category} · {formatCurrency(item.price)}</p>
                 </div>
-                <span className={`rounded-full px-3 py-1 text-sm ${item.isAvailable ? 'bg-emerald-400/10 text-emerald-300' : 'bg-rose-500/10 text-rose-300'}`}>
+                <span className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${item.isAvailable ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
                   {item.isAvailable ? 'Available' : 'Hidden'}
                 </span>
               </div>
               <Button
                 variant="outline"
-                className="mt-4 h-10 w-full rounded-xl border-[#374151] bg-[#0B1220] text-sm text-[#F9FAFB] hover:bg-[#111827]"
+                size="sm"
+                className="mt-3 w-full"
                 disabled={updatingItemId === item.id}
                 onClick={() => void handleToggleAvailability(item)}
               >
                 {updatingItemId === item.id ? 'Saving...' : item.isAvailable ? 'Mark unavailable' : 'Mark available'}
               </Button>
             </div>
-          )) : <p className="text-sm text-slate-400">No menu items were loaded from Supabase.</p>}
+          )) : <p className="text-sm text-slate-500">No menu items were loaded from Supabase.</p>}
         </CardContent>
       </Card>
     </div>
