@@ -1,6 +1,6 @@
 import { supabase } from './supabaseClient';
 
-const menuSelect = 'id, name, price, image_url, is_available, category:categories(id, name)';
+const productSelect = 'id, name, price, image_url, available, category:categories(id, name)';
 
 const fallbackImages = {
   Coffee: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=900&q=80',
@@ -12,6 +12,8 @@ const fallbackImages = {
   Desserts: 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?auto=format&fit=crop&w=900&q=80',
   Water: 'https://images.unsplash.com/photo-1564419320461-6870880221ad?auto=format&fit=crop&w=900&q=80',
   Drinks: 'https://images.unsplash.com/photo-1517701604599-bb29b565090c?auto=format&fit=crop&w=900&q=80',
+  Bakery: 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?auto=format&fit=crop&w=900&q=80',
+  Meals: 'https://images.unsplash.com/photo-1528735602780-2552fd46c7af?auto=format&fit=crop&w=900&q=80',
 };
 
 function mapMenuItem(item) {
@@ -23,8 +25,8 @@ function mapMenuItem(item) {
     category,
     price: Number(item.price ?? 0),
     imageUrl: item.image_url || fallbackImages[category] || fallbackImages.Drinks,
-    isAvailable: Boolean(item.is_available),
-    status: item.is_available ? 'Available' : 'Sold out',
+    isAvailable: Boolean(item.available),
+    status: item.available ? 'Available' : 'Sold out',
     options: [],
   };
 }
@@ -40,7 +42,7 @@ export async function getCategories() {
 }
 
 export async function getMenuItems() {
-  const { data, error } = await supabase.from('menu_items').select(menuSelect).order('name');
+  const { data, error } = await supabase.from('products').select(productSelect).order('name');
 
   if (error) {
     throw error;
@@ -51,13 +53,12 @@ export async function getMenuItems() {
 
 export async function updateMenuItemAvailability(menuItemId, isAvailable) {
   const { data, error } = await supabase
-    .from('menu_items')
+    .from('products')
     .update({
-      is_available: Boolean(isAvailable),
-      updated_at: new Date().toISOString(),
+      available: Boolean(isAvailable),
     })
     .eq('id', menuItemId)
-    .select(menuSelect)
+    .select(productSelect)
     .limit(1)
     .maybeSingle();
 

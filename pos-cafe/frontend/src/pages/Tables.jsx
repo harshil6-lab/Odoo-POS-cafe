@@ -27,46 +27,52 @@ export default function Tables() {
   const reservedCount = tables.filter((table) => table.status === 'reserved').length;
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6 px-6 py-10">
-      <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-md">
+    <div className="page-container space-y-8">
+      {/* Header */}
+      <div className="glass-card p-6">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <p className="text-sm font-medium text-slate-400">Realtime floor overview</p>
-            <h1 className="mt-2 text-3xl font-semibold text-white">Tables</h1>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-400 md:text-base">
-              Live table records are loaded from Supabase and update automatically when service status changes.
-            </p>
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">🪑</span>
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wider text-slate-500">Realtime floor overview</p>
+              <h1 className="mt-1 font-display text-2xl font-bold tracking-tight text-white">Tables</h1>
+              <p className="mt-1 text-sm text-slate-400">
+                Live table records from Supabase with automatic status updates.
+              </p>
+            </div>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-2xl border border-slate-800 bg-slate-950 px-4 py-4">
-              <p className="text-2xl font-semibold text-white">{availableCount}</p>
-              <p className="mt-1 text-sm text-slate-400">Available</p>
-            </div>
-            <div className="rounded-2xl border border-slate-800 bg-slate-950 px-4 py-4">
-              <p className="text-2xl font-semibold text-white">{occupiedCount}</p>
-              <p className="mt-1 text-sm text-slate-400">Occupied</p>
-            </div>
-            <div className="rounded-2xl border border-slate-800 bg-slate-950 px-4 py-4">
-              <p className="text-2xl font-semibold text-white">{reservedCount}</p>
-              <p className="mt-1 text-sm text-slate-400">Reserved</p>
-            </div>
+            {[
+              { value: availableCount, label: 'Available', color: 'text-emerald-400' },
+              { value: occupiedCount, label: 'Occupied', color: 'text-red-400' },
+              { value: reservedCount, label: 'Reserved', color: 'text-amber-400' },
+            ].map((stat) => (
+              <div key={stat.label} className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3">
+                <p className={`font-display text-2xl font-bold ${stat.color}`}>{stat.value}</p>
+                <p className="mt-0.5 text-[11px] text-slate-500">{stat.label}</p>
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr),420px]">
-        <Card className="rounded-2xl border-slate-800 bg-slate-900 shadow-md">
-          <CardHeader className="p-6">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <CardTitle className="text-2xl font-semibold text-white">Two-floor table map</CardTitle>
-              <div className="flex flex-wrap gap-2">
+        <Card className="glass-card">
+          <CardHeader className="p-5">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <CardTitle className="font-display text-lg font-semibold">Floor map</CardTitle>
+              <div className="flex gap-2">
                 {['Ground Floor', 'First Floor'].map((floor) => (
                   <button
                     key={floor}
                     type="button"
                     onClick={() => setActiveFloor(floor)}
-                    className={`rounded-xl px-5 py-2 font-medium transition ${activeFloor === floor ? 'bg-[#EF4F5F] text-white' : 'border border-slate-700 bg-slate-950 text-slate-200 hover:bg-slate-800'}`}
+                    className={`rounded-lg px-4 py-2 text-xs font-medium transition-all duration-200 ${
+                      activeFloor === floor
+                        ? 'bg-primary text-white shadow-glow-red'
+                        : 'border border-white/[0.06] bg-white/[0.03] text-slate-400 hover:bg-white/[0.06] hover:text-white'
+                    }`}
                   >
                     {floor}
                   </button>
@@ -74,51 +80,56 @@ export default function Tables() {
               </div>
             </div>
           </CardHeader>
-          <CardContent className="grid gap-4 p-6 pt-0 md:grid-cols-2 xl:grid-cols-3">
+          <CardContent className="grid gap-4 p-5 pt-0 md:grid-cols-2 xl:grid-cols-3">
             {floorTables.length ? floorTables.map((table) => (
-              <div key={table.dbId || table.id} className="rounded-2xl border border-slate-800 bg-slate-950 p-5 shadow-md">
-                <div className="flex items-start justify-between gap-4">
+              <div key={table.dbId || table.id} className="group rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 transition-all duration-200 hover:scale-[1.02] hover:bg-white/[0.04] hover:shadow-card-hover">
+                <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="text-sm text-slate-400">{table.floor}</p>
-                    <h3 className="mt-2 text-xl font-semibold text-white">{table.label}</h3>
+                    <p className="text-[11px] text-slate-500">{table.floor}</p>
+                    <h3 className="mt-1 font-display text-lg font-semibold text-white">{table.label}</h3>
                   </div>
-                  <span className={`rounded-full border px-3 py-1 text-xs font-medium ${getTableStatusTone(table.status)}`}>
+                  <span className={`rounded-full border px-2.5 py-1 text-[11px] font-medium ${getTableStatusTone(table.status)}`}>
                     {table.status}
                   </span>
                 </div>
 
-                <div className="mt-5 rounded-2xl border border-slate-800 bg-slate-900/60 p-4">
-                  <div className="flex items-center justify-between text-sm text-slate-400">
+                <div className="mt-3 rounded-lg border border-white/[0.04] bg-white/[0.01] p-3 text-xs">
+                  <div className="flex items-center justify-between text-slate-500">
                     <span>Capacity</span>
-                    <span className="text-white">{table.seats}</span>
+                    <span className="font-medium text-white">{table.seats}</span>
                   </div>
-                  <p className="mt-3 text-sm text-slate-400">{table.note}</p>
+                  {table.note && <p className="mt-2 text-slate-500">{table.note}</p>}
                 </div>
 
                 <Button
-                  className="mt-5 w-full rounded-xl bg-[#EF4F5F] px-5 py-2 font-medium text-white hover:bg-[#d93f4f]"
+                  size="sm"
+                  className="mt-3 w-full"
                   onClick={() => navigate(`/register?table=${table.id}`)}
                 >
                   Open register
                 </Button>
               </div>
             )) : (
-              <div className="md:col-span-2 xl:col-span-3 rounded-2xl border border-dashed border-slate-800 bg-slate-950 p-6 text-sm text-slate-400">
-                No live tables were returned for {activeFloor}.
+              <div className="md:col-span-2 xl:col-span-3 rounded-xl border border-dashed border-white/[0.06] bg-white/[0.01] p-6 text-center text-sm text-slate-500">
+                No live tables for {activeFloor}.
               </div>
             )}
           </CardContent>
         </Card>
 
-        <Card className="rounded-2xl border-slate-800 bg-slate-900 shadow-md">
-          <CardHeader className="p-6">
-            <CardTitle className="text-2xl font-semibold text-white">3D floor preview</CardTitle>
+        <Card className="glass-card">
+          <CardHeader className="p-5">
+            <CardTitle className="font-display text-lg font-semibold">3D Preview</CardTitle>
           </CardHeader>
-          <CardContent className="p-6 pt-0">
-            <div className="relative h-[420px] overflow-hidden rounded-2xl border border-slate-800 bg-slate-950">
+          <CardContent className="p-5 pt-0">
+            <div className="relative h-[420px] overflow-hidden rounded-xl border border-white/[0.06] bg-surface">
               <TableScene tables={floorTables} />
-              <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent p-4">
-                <p className="text-sm text-slate-300">Green: available, red: occupied, yellow: reserved.</p>
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-surface via-surface/80 to-transparent p-4">
+                <div className="flex items-center gap-4 text-xs text-slate-500">
+                  <span className="flex items-center gap-1.5"><span className="status-dot status-dot-available" /> Available</span>
+                  <span className="flex items-center gap-1.5"><span className="status-dot status-dot-occupied" /> Occupied</span>
+                  <span className="flex items-center gap-1.5"><span className="status-dot status-dot-reserved" /> Reserved</span>
+                </div>
               </div>
             </div>
           </CardContent>

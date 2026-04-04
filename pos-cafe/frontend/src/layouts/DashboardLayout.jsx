@@ -9,15 +9,15 @@ export default function DashboardLayout() {
       <div className="relative z-50">
         <Navbar isDashboard />
       </div>
-      <main className="relative z-0 h-[calc(100vh-4rem)] w-full overflow-hidden p-4">
+      <main className="relative z-0 h-[calc(100vh-4rem)] w-full overflow-hidden">
         <AnimatePresence mode="wait">
           <motion.div
             key={location.pathname}
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3 }}
-            className="h-full overflow-y-auto"
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.25, ease: 'easeOut' }}
+            className="h-full overflow-y-auto px-4 py-6 lg:px-0"
           >
             <Outlet />
           </motion.div>

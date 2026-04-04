@@ -111,7 +111,7 @@ function Login() {
       footer={(
         <>
           Need an account?{' '}
-          <Link className="font-semibold text-amber-400" to="/signup">
+          <Link className="font-semibold text-primary hover:text-primary/80" to="/signup">
             Create account
           </Link>
         </>

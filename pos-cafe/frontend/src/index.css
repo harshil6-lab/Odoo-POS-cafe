@@ -8,30 +8,47 @@
 
 @layer base {
   body {
-    @apply bg-background text-white;
+    @apply bg-background text-white antialiased;
     font-family: 'Inter Variable', system-ui, -apple-system, sans-serif;
     text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
     overflow-x: hidden;
   }
 
-  html,
+  html {
+    scroll-behavior: smooth;
+    overflow-x: hidden;
+  }
+
   #root {
     overflow-x: hidden;
   }
 
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
+  h1, h2, h3, h4, h5, h6 {
     font-family: 'Clash Display', 'Inter Variable', system-ui, sans-serif;
     letter-spacing: -0.03em;
   }
 
   ::selection {
-    background: rgba(239, 79, 95, 0.3);
+    background: rgba(239, 79, 95, 0.35);
     color: #ffffff;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #0B0F1A;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #1e293b;
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #334155;
   }
 }
 
@@ -46,5 +63,61 @@
 
   .cards-gap {
     @apply gap-10;
+  }
+
+  /* Premium page container */
+  .page-container {
+    @apply mx-auto max-w-7xl px-6 py-8;
+  }
+
+  /* Glass card effect */
+  .glass-card {
+    @apply rounded-2xl border border-white/[0.06] bg-card/80 backdrop-blur-xl shadow-premium;
+  }
+
+  /* Animated gradient border */
+  .gradient-border {
+    position: relative;
+  }
+  .gradient-border::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(135deg, rgba(239,79,95,0.3), rgba(245,158,11,0.3), rgba(52,211,153,0.3));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  /* Food emoji decorations */
+  .food-emoji {
+    @apply pointer-events-none select-none opacity-60;
+    font-size: 2rem;
+  }
+
+  /* Status dot */
+  .status-dot {
+    @apply h-2.5 w-2.5 rounded-full;
+  }
+  .status-dot-available { @apply bg-emerald-400 shadow-glow-green; }
+  .status-dot-occupied { @apply bg-red-400 shadow-glow-red; }
+  .status-dot-reserved { @apply bg-amber-400 shadow-glow-amber; }
+
+  /* Premium metric card */
+  .metric-card {
+    @apply rounded-2xl border border-white/[0.06] bg-gradient-to-br from-card to-surface p-5 transition-all duration-300;
+  }
+  .metric-card:hover {
+    @apply border-white/[0.1] shadow-card-hover scale-[1.02];
+  }
+
+  /* Shimmer loading effect */
+  .shimmer {
+    background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.04) 50%, transparent 100%);
+    background-size: 200% 100%;
+    animation: shimmer 2s linear infinite;
   }
 }

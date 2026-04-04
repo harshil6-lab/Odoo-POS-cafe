@@ -344,14 +344,17 @@ export function AppStateProvider({ children }) {
       order: {
         table_id: matchedTable.dbId,
         customer_name: finalCustomerName,
-        payment_method: paymentMethod,
         status: 'pending',
       },
       items: cartItems.map((item) => ({
-        menu_item_id: item.id,
+        product_id: item.id,
         quantity: item.quantity,
+        unit_price: item.price,
         preferences: item.preferences ?? [],
       })),
+      payment: paymentMethod ? {
+        method: paymentMethod === 'UPI QR' ? 'upi_qr' : paymentMethod.toLowerCase(),
+      } : null,
     });
 
     if (releaseTable) {

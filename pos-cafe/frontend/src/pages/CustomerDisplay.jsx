@@ -89,7 +89,7 @@ export default function CustomerDisplay() {
 
   return (
     <div className="grid min-h-screen bg-slate-950 text-white lg:grid-cols-[1.2fr,0.8fr]">
-      <div className="flex flex-col justify-center border-b border-slate-800 bg-[radial-gradient(circle_at_top,_rgba(245,158,11,0.18),_transparent_28%),linear-gradient(180deg,rgba(15,23,42,0.96),rgba(2,6,23,1))] p-10 lg:border-b-0 lg:border-r lg:p-16">
+      <div className="flex flex-col justify-center border-b border-white/[0.06] bg-[radial-gradient(circle_at_top,_rgba(239,79,95,0.12),_transparent_28%),linear-gradient(180deg,rgba(15,23,42,0.96),rgba(2,6,23,1))] p-10 lg:border-b-0 lg:border-r lg:p-16">
         <div className="max-w-3xl">
           <p className="font-accent text-xs uppercase tracking-[0.3em] text-slate-500">Customer display</p>
           <h1 className="mt-6 font-display text-6xl font-semibold leading-none">{stage === 'ready' ? 'Your order is ready' : 'Your order is being prepared'}</h1>
@@ -98,9 +98,9 @@ export default function CustomerDisplay() {
 
         <div className="mt-14 flex items-center gap-8">
           {stage === 'preparing' ? (
-            <div className="relative flex h-40 w-40 items-center justify-center rounded-full border border-amber-500/20 bg-amber-500/10">
-              <div className="absolute inset-0 animate-ping rounded-full border border-amber-500/30" />
-              <CookingPot className="h-16 w-16 animate-pulse text-amber-400" />
+            <div className="relative flex h-40 w-40 items-center justify-center rounded-full border border-primary/20 bg-primary/10">
+              <div className="absolute inset-0 animate-ping rounded-full border border-primary/30" />
+              <CookingPot className="h-16 w-16 animate-pulse text-primary" />
             </div>
           ) : (
             <div className="relative flex h-40 w-40 items-center justify-center rounded-full border border-teal-400/20 bg-teal-400/10">
@@ -111,7 +111,7 @@ export default function CustomerDisplay() {
 
           <div className="rounded-[2rem] border border-slate-800 bg-slate-900 p-8 shadow-lg">
             <p className="font-accent text-xs uppercase tracking-[0.28em] text-slate-500">Status</p>
-            <p className={`mt-4 font-display text-4xl font-semibold ${stage === 'ready' ? 'text-teal-300' : 'text-amber-400'}`}>
+            <p className={`mt-4 font-display text-4xl font-semibold ${stage === 'ready' ? 'text-teal-300' : 'text-primary'}`}>
               {stage === 'ready' ? 'Pickup / Serve now' : 'Barista & kitchen in progress'}
             </p>
             <p className="mt-4 text-lg leading-8 text-slate-400">

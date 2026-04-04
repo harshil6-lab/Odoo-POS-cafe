@@ -5,13 +5,11 @@ import { formatCurrency } from '../utils/helpers';
 
 function MetricCard({ label, value, helper }) {
   return (
-    <Card className="rounded-2xl border-slate-800 bg-slate-900 shadow-md">
-      <CardContent className="p-6">
-        <p className="text-sm text-slate-500">{label}</p>
-        <p className="mt-4 font-display text-4xl font-semibold text-white">{value}</p>
-        <p className="mt-3 text-sm text-slate-400">{helper}</p>
-      </CardContent>
-    </Card>
+    <div className="metric-card">
+      <p className="text-[11px] uppercase tracking-wider text-slate-500">{label}</p>
+      <p className="mt-2 font-display text-2xl font-bold text-white">{value}</p>
+      <p className="mt-1 text-[11px] text-slate-500">{helper}</p>
+    </div>
   );
 }
 
@@ -49,12 +47,17 @@ export default function Reports() {
   }, [tables]);
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6 px-6 py-10">
-      <div>
-        <p className="font-accent text-xs uppercase tracking-[0.28em] text-slate-500">Reports dashboard</p>
-        <h1 className="mt-3 font-display text-4xl font-semibold text-white">Restaurant analytics</h1>
-        <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-400">
-          These metrics are derived from the live tables, reservations, menu catalog, and active orders already loaded from Supabase-backed services.
+    <div className="page-container space-y-6">
+      <div className="glass-card p-6">
+        <div className="flex items-center gap-3">
+          <span className="text-2xl">📊</span>
+          <div>
+            <p className="text-[11px] uppercase tracking-wider text-slate-500">Reports dashboard</p>
+            <h1 className="font-display text-2xl font-bold tracking-tight text-white">Restaurant analytics</h1>
+          </div>
+        </div>
+        <p className="mt-2 text-sm text-slate-400">
+          Metrics derived from live tables, reservations, menu catalog, and active orders.
         </p>
       </div>
 
@@ -65,64 +68,64 @@ export default function Reports() {
         <MetricCard label="Leading payment mode" value={paymentMix[0]?.[0] || 'N/A'} helper="Based on current live orders." />
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[0.95fr,1.05fr]">
-        <Card className="rounded-2xl border-slate-800 bg-slate-900 shadow-md">
-          <CardHeader>
-            <CardTitle className="font-display text-3xl">Table status breakdown</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4 p-6 pt-0">
+      <div className="grid gap-4 xl:grid-cols-[0.95fr,1.05fr]">
+        <div className="glass-card">
+          <div className="border-b border-white/[0.06] p-5">
+            <h2 className="font-display text-lg font-bold text-white">Table status breakdown</h2>
+          </div>
+          <div className="space-y-2 p-5">
             {statusBreakdown.map((item) => (
-              <div key={item.status} className="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
-                <p className="text-base font-medium capitalize text-white">{item.status}</p>
-                <p className="text-2xl font-semibold text-amber-300">{item.count}</p>
+              <div key={item.status} className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                <p className="text-sm font-medium capitalize text-white">{item.status}</p>
+                <p className="text-lg font-bold text-accent">{item.count}</p>
               </div>
             ))}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        <Card className="rounded-2xl border-slate-800 bg-slate-900 shadow-md">
-          <CardHeader>
-            <CardTitle className="font-display text-3xl">Top selling live items</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4 p-6 pt-0">
+        <div className="glass-card">
+          <div className="border-b border-white/[0.06] p-5">
+            <h2 className="font-display text-lg font-bold text-white">Top selling live items</h2>
+          </div>
+          <div className="space-y-2 p-5">
             {topSelling.length ? topSelling.map((item, index) => (
-              <div key={item.name} className="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+              <div key={item.name} className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
                 <div>
-                  <p className="font-display text-2xl font-semibold text-white">{item.name}</p>
-                  <p className="mt-2 text-sm text-slate-400">Rank #{index + 1}</p>
+                  <p className="text-sm font-medium text-white">{item.name}</p>
+                  <p className="mt-0.5 text-[11px] text-slate-500">Rank #{index + 1}</p>
                 </div>
                 <div className="text-right">
-                  <p className="font-display text-3xl font-semibold text-amber-400">{item.sold}</p>
-                  <p className="mt-2 text-sm text-slate-400">units sold</p>
+                  <p className="font-display text-lg font-bold text-accent">{item.sold}</p>
+                  <p className="text-[11px] text-slate-500">units sold</p>
                 </div>
               </div>
             )) : (
-              <div className="rounded-2xl border border-dashed border-slate-800 bg-slate-950/70 p-6 text-sm text-slate-400">
-                No live order items are available yet. Place orders to populate sales insights.
+              <div className="rounded-xl border border-dashed border-white/[0.06] bg-white/[0.01] p-5 text-sm text-slate-500">
+                No live order items available yet.
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
 
-      <Card className="rounded-2xl border-slate-800 bg-slate-900 shadow-md">
-        <CardHeader>
-          <CardTitle className="font-display text-3xl">Current payment mix</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-4 p-6 pt-0 md:grid-cols-2 xl:grid-cols-4">
+      <div className="glass-card">
+        <div className="border-b border-white/[0.06] p-5">
+          <h2 className="font-display text-lg font-bold text-white">Current payment mix</h2>
+        </div>
+        <div className="grid gap-3 p-5 md:grid-cols-2 xl:grid-cols-4">
           {paymentMix.length ? paymentMix.map(([name, count]) => (
-            <div key={name} className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
-              <p className="text-sm text-slate-400">{name}</p>
-              <p className="mt-2 text-2xl font-semibold text-white">{count}</p>
-              <p className="mt-1 text-sm text-slate-400">live orders</p>
+            <div key={name} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+              <p className="text-[11px] text-slate-500">{name}</p>
+              <p className="mt-1 text-xl font-bold text-white">{count}</p>
+              <p className="mt-0.5 text-[11px] text-slate-500">live orders</p>
             </div>
           )) : (
-            <div className="md:col-span-2 xl:col-span-4 rounded-2xl border border-dashed border-slate-800 bg-slate-950/70 p-6 text-sm text-slate-400">
+            <div className="md:col-span-2 xl:col-span-4 rounded-xl border border-dashed border-white/[0.06] bg-white/[0.01] p-5 text-sm text-slate-500">
               Payment analytics appear once live orders are present.
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

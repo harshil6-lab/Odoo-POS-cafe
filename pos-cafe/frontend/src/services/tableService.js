@@ -1,33 +1,31 @@
 import { supabase } from './supabaseClient';
 
 const TABLE_STATUSES = new Set(['available', 'occupied', 'reserved', 'cleaning']);
-const tableSelect = 'id, table_code, floor_id, status, seats, floor:floors(id, name)';
-
-function buildNote(tableCode, floorName) {
-  return floorName === 'Ground Floor'
-    ? `${tableCode} is positioned close to the main service aisle.`
-    : `${tableCode} is in the quieter upstairs seating area.`;
-}
+const tableSelect = 'id, name, area, capacity, pos_x, pos_y, shape, status, active';
 
 function mapTableRecord(record) {
-  const floorName = record.floor?.name ?? 'Floor';
+  const area = record.area ?? 'Main';
 
   return {
-    id: record.table_code,
+    id: record.name,
     dbId: record.id,
-    floorId: record.floor_id ?? record.floor?.id ?? null,
-    tableCode: record.table_code,
-    label: `Table ${record.table_code}`,
-    floor: floorName,
-    zone: floorName,
+    tableCode: record.name,
+    label: `Table ${record.name}`,
+    floor: area,
+    zone: area,
     status: record.status,
-    seats: record.seats,
-    note: buildNote(record.table_code, floorName),
+    seats: record.capacity,
+    capacity: record.capacity,
+    posX: record.pos_x,
+    posY: record.pos_y,
+    shape: record.shape,
+    active: record.active,
+    note: `${record.name} — ${area}, seats ${record.capacity}`,
   };
 }
 
 function resolveTableColumn(tableIdentifier) {
-  return /^[0-9a-f-]{36}$/i.test(String(tableIdentifier)) ? 'id' : 'table_code';
+  return /^[0-9a-f-]{36}$/i.test(String(tableIdentifier)) ? 'id' : 'name';
 }
 
 function normalizeStatus(status) {
@@ -41,7 +39,7 @@ function normalizeStatus(status) {
 }
 
 export async function getAllTables() {
-  const { data, error } = await supabase.from('tables').select(tableSelect).order('table_code');
+  const { data, error } = await supabase.from('tables').select(tableSelect).order('name');
 
   if (error) {
     throw error;
@@ -50,12 +48,12 @@ export async function getAllTables() {
   return (data ?? []).map(mapTableRecord);
 }
 
-export async function getTablesByFloor(floorId) {
+export async function getTablesByArea(area) {
   const { data, error } = await supabase
     .from('tables')
     .select(tableSelect)
-    .eq('floor_id', floorId)
-    .order('table_code');
+    .eq('area', area)
+    .order('name');
 
   if (error) {
     throw error;
@@ -64,11 +62,11 @@ export async function getTablesByFloor(floorId) {
   return (data ?? []).map(mapTableRecord);
 }
 
-export async function getTableByCode(table_code) {
+export async function getTableByCode(tableName) {
   const { data, error } = await supabase
     .from('tables')
     .select(tableSelect)
-    .eq('table_code', table_code)
+    .eq('name', tableName)
     .maybeSingle();
 
   if (error) {
@@ -83,7 +81,7 @@ export async function updateTableStatus(tableIdentifier, status) {
   const column = resolveTableColumn(tableIdentifier);
   const { data, error } = await supabase
     .from('tables')
-    .update({ status: nextStatus, updated_at: new Date().toISOString() })
+    .update({ status: nextStatus })
     .eq(column, tableIdentifier)
     .select(tableSelect)
     .limit(1)

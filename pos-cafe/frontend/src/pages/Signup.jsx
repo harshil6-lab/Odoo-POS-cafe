@@ -111,7 +111,7 @@ function Signup() {
       footer={(
         <>
           Already have an account?{' '}
-          <Link className="font-semibold text-amber-400" to="/login">
+          <Link className="font-semibold text-primary hover:text-primary/80" to="/login">
             Log in here
           </Link>
         </>
@@ -160,7 +160,7 @@ function Signup() {
             name="role"
             value={form.role}
             onChange={handleChange}
-            className="h-11 w-full rounded-xl border border-[#374151] bg-[#111827] px-4 text-sm text-[#F9FAFB] focus:border-amber-500 focus:outline-none"
+            className="h-11 w-full rounded-xl border border-white/[0.08] bg-surface px-4 text-sm text-white focus:border-primary/50 focus:outline-none"
           >
             {STAFF_ROLES.map((r) => (
               <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>
