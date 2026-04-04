@@ -76,11 +76,11 @@ export default function Checkout() {
       if (orderError) throw new Error(orderError.message);
       if (!newOrder) throw new Error('Order creation failed — ensure RLS allows inserts for this role.');
 
-      // Step 4: Insert order items (product_id, not menu_item_id)
+      // Step 4: Insert order items
       const { error: itemsError } = await supabase.from('order_items').insert(
         cartItems.map((item) => ({
           order_id: newOrder.id,
-          product_id: item.id,
+          menu_item_id: item.id,
           quantity: item.quantity,
           unit_price: item.price,
           line_total: parseFloat((item.price * item.quantity).toFixed(2)),

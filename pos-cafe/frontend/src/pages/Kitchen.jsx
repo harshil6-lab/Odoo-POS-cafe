@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card'
 import KitchenStatusBadge, { KITCHEN_ORDER_STATUSES } from '../components/KitchenStatusBadge';
 import { supabase } from '../services/supabaseClient';
 
-const ORDER_SELECT = '*, order_items(*, products(name)), tables(table_code)';
+const ORDER_SELECT = '*, order_items(*, menu_items(name)), tables(table_code)';
 
 function mapOrder(raw) {
   return {
@@ -15,7 +15,7 @@ function mapOrder(raw) {
     createdAt: raw.created_at,
     items: (raw.order_items ?? []).map((oi) => ({
       id: oi.id,
-      name: oi.products?.name ?? 'Item',
+      name: oi.menu_items?.name ?? 'Item',
       quantity: oi.quantity,
     })),
   };

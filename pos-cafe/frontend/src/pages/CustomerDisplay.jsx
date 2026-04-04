@@ -21,7 +21,7 @@ export default function CustomerDisplay() {
     const fetchOrder = async () => {
       const { data, error } = await supabase
         .from('orders')
-        .select('*, order_items(*, products(name)), tables(table_code)')
+        .select('*, order_items(*, menu_items(name)), tables(table_code)')
         .eq('id', orderId)
         .limit(1)
         .maybeSingle();
@@ -32,7 +32,7 @@ export default function CustomerDisplay() {
           table: data.tables?.table_code || 'Unknown',
           status: data.status,
           items: (data.order_items || []).map((oi) => ({
-            name: oi.products?.name || 'Item',
+            name: oi.menu_items?.name || 'Item',
             quantity: Number(oi.quantity),
             price: Number(oi.unit_price),
           })),

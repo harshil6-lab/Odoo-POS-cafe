@@ -17,7 +17,7 @@ export default function MenuEditor() {
   const fetchData = async () => {
     setLoading(true);
     const [{ data: prods }, { data: cats }] = await Promise.all([
-      supabase.from('products').select('*, categories(name)').order('name'),
+      supabase.from('menu_items').select('*, categories(name)').order('name'),
       supabase.from('categories').select('*').order('sort_order'),
     ]);
     setProducts(prods || []);
@@ -34,9 +34,9 @@ export default function MenuEditor() {
     };
 
     if (editing) {
-      await supabase.from('products').update(payload).eq('id', editing);
+      await supabase.from('menu_items').update(payload).eq('id', editing);
     } else {
-      await supabase.from('products').insert(payload);
+      await supabase.from('menu_items').insert(payload);
     }
 
     setEditing(null);
@@ -55,7 +55,7 @@ export default function MenuEditor() {
   };
 
   const toggleAvailability = async (product) => {
-    await supabase.from('products').update({ available: !product.available }).eq('id', product.id);
+    await supabase.from('menu_items').update({ available: !product.available }).eq('id', product.id);
     fetchData();
   };
 

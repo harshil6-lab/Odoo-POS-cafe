@@ -42,7 +42,7 @@ export async function getCategories() {
 }
 
 export async function getMenuItems() {
-  const { data, error } = await supabase.from('products').select(productSelect).order('name');
+  const { data, error } = await supabase.from('menu_items').select(productSelect).order('name');
 
   if (error) {
     throw error;
@@ -53,7 +53,7 @@ export async function getMenuItems() {
 
 export async function updateMenuItemAvailability(menuItemId, isAvailable) {
   const { data, error } = await supabase
-    .from('products')
+    .from('menu_items')
     .update({
       available: Boolean(isAvailable),
     })

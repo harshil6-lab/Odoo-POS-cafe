@@ -347,7 +347,7 @@ export function AppStateProvider({ children }) {
         status: 'pending',
       },
       items: cartItems.map((item) => ({
-        product_id: item.id,
+        menu_item_id: item.id,
         quantity: item.quantity,
         unit_price: item.price,
         preferences: item.preferences ?? [],

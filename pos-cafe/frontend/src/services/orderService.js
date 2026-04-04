@@ -21,7 +21,7 @@ const orderSelect = `
     unit_price,
     line_total,
     notes,
-    product:products(id, name, price, image_url)
+    menu_item:menu_items(id, name, price, image_url)
   )
 `;
 
@@ -36,9 +36,9 @@ function mapOrder(order) {
     id: item.id,
     quantity: Number(item.quantity),
     preferences: item.notes ? [item.notes] : [],
-    name: item.product?.name ?? 'Menu item',
-    price: Number(item.unit_price ?? item.product?.price ?? 0),
-    imageUrl: item.product?.image_url ?? null,
+    name: item.menu_item?.name ?? 'Menu item',
+    price: Number(item.unit_price ?? item.menu_item?.price ?? 0),
+    imageUrl: item.menu_item?.image_url ?? null,
   }));
 
   const total = Number(order.total_amount) || items.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -95,7 +95,7 @@ export async function createOrder(payload) {
 export async function addOrderItems(orderId, items) {
   const rows = items.map((item) => ({
     order_id: orderId,
-    product_id: item.product_id,
+    menu_item_id: item.menu_item_id ?? item.product_id,
     quantity: item.quantity,
     unit_price: item.unit_price,
     line_total: item.unit_price * item.quantity,
