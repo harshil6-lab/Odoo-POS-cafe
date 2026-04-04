@@ -10,7 +10,7 @@ const STAFF_ROLES = ['manager', 'waiter', 'cashier', 'chef'];
 
 function Signup() {
   const navigate = useNavigate();
-  const { user, signup, redirectPath, loading: authLoading } = useAuth();
+  const { user, redirectPath, loading: authLoading } = useAuth();
   const [form, setForm] = useState({ fullName: '', phone: '', email: '', password: '', role: 'waiter' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -36,51 +36,50 @@ function Signup() {
     setError('');
     setSuccess('');
 
-    try {
-      // Validate role is selected
-      if (!form.role || !STAFF_ROLES.includes(form.role)) {
-        throw new Error('Please select a valid role: ' + STAFF_ROLES.join(', '));
-      }
-
-      const result = await signup(form);
-      const authUser = result.data?.user;
-
-      if (!authUser) {
-        throw new Error('Signup failed: No user created.');
-      }
-
-      // Supabase trigger auto-creates the user row — only update the role
-      const { data: updatedUser, error: updateError } = await supabase
-        .from('users')
-        .update({ role: form.role })
-        .eq('id', authUser.id)
-        .select('id, email, role, full_name')
-        .maybeSingle();
-
-      if (updateError) {
-        await supabase.auth.signOut();
-        throw new Error('Failed to assign role: ' + updateError.message);
-      }
-
-      if (updatedUser && updatedUser.role !== form.role) {
-        console.warn(
-          `Role mismatch after update: expected ${form.role}, got ${updatedUser.role}`
-        );
-      }
-
-      setSuccess('Staff account created! You can now sign in with your credentials.');
-      setForm({ fullName: '', phone: '', email: '', password: '', role: 'waiter' });
-
-      // Auto-redirect to login after 2 seconds
-      setTimeout(() => {
-        navigate('/login', { replace: true });
-      }, 2000);
-    } catch (err) {
-      console.error('Signup error:', err);
-      setError(err.message ?? 'Unable to sign up.');
-    } finally {
+    if (!form.role || !STAFF_ROLES.includes(form.role)) {
+      setError('Please select a valid role: ' + STAFF_ROLES.join(', '));
       setLoading(false);
+      return;
     }
+
+    const { data, error: signUpError } = await supabase.auth.signUp({
+      email: form.email,
+      password: form.password,
+      options: {
+        data: {
+          full_name: form.fullName,
+        },
+      },
+    });
+
+    if (signUpError) {
+      setError(signUpError.message);
+      setLoading(false);
+      return;
+    }
+
+    if (!data.user) {
+      setError('Signup failed: No user created.');
+      setLoading(false);
+      return;
+    }
+
+    // Trigger creates the users row — only update the role
+    await supabase
+      .from('users')
+      .update({ role: form.role })
+      .eq('id', data.user.id);
+
+    // Sign out so user logs in fresh with correct role
+    await supabase.auth.signOut();
+
+    setSuccess('Staff account created! You can now sign in.');
+    setForm({ fullName: '', phone: '', email: '', password: '', role: 'waiter' });
+    setLoading(false);
+
+    setTimeout(() => {
+      navigate('/login', { replace: true });
+    }, 2000);
   };
 
   return (
