@@ -48,36 +48,25 @@ function Signup() {
         throw new Error('Signup failed: No user created.');
       }
 
-      // CRITICAL: Insert into public.users with selected role IMMEDIATELY after signup
-      // This determines the user's staff workspace access
-      const { data: insertedUser, error: insertError } = await supabase
+      // Supabase trigger auto-creates the user row — just update the role and name
+      const { data: updatedUser, error: updateError } = await supabase
         .from('users')
-        .insert({
-          id: authUser.id,
-          email: authUser.email,
+        .update({
+          role: form.role,
           full_name: form.fullName || 'Staff Member',
-          role: form.role,  // Direct role assignment (no roles table join needed)
         })
+        .eq('id', authUser.id)
         .select('id, email, role, full_name')
-        .limit(1)
         .maybeSingle();
 
-      if (insertError) {
-        // If user insert fails, the system will fall back to DB 'cashier' default
-        // This is a critical error that must be surfaced
+      if (updateError) {
         await supabase.auth.signOut();
-        throw new Error('Failed to create staff profile: ' + insertError.message);
+        throw new Error('Failed to assign role: ' + updateError.message);
       }
 
-      if (!insertedUser) {
-        await supabase.auth.signOut();
-        throw new Error('Staff profile was not created.');
-      }
-
-      // Verify role was saved correctly
-      if (insertedUser.role !== form.role) {
+      if (updatedUser && updatedUser.role !== form.role) {
         console.warn(
-          `Role mismatch after insert: expected ${form.role}, got ${insertedUser.role}`
+          `Role mismatch after update: expected ${form.role}, got ${updatedUser.role}`
         );
       }
 
