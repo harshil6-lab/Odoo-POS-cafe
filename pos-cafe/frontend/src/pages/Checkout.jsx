@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
@@ -16,7 +16,7 @@ const paymentMethods = [
 
 export default function Checkout() {
   const navigate = useNavigate();
-  const { cartItems, customerDetails, selectedTableId, totals, placeOrder } = useAppState();
+  const { cartItems, customerDetails, setCustomerDetails, selectedTableId, totals, placeOrder } = useAppState();
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [customerEmail, setCustomerEmail] = useState('');
   const [showUpiModal, setShowUpiModal] = useState(false);
@@ -24,6 +24,13 @@ export default function Checkout() {
   const [submitting, setSubmitting] = useState(false);
 
   const paymentLabel = useMemo(() => paymentMethods.find((item) => item.id === paymentMethod)?.title || 'Cash', [paymentMethod]);
+
+  // Auto-set guest name for QR customer flow
+  useEffect(() => {
+    if (sessionStorage.getItem('table_code') && !customerDetails.name) {
+      setCustomerDetails({ name: 'Guest' });
+    }
+  }, []);
 
   const submitOrder = async () => {
     setSubmitting(true);
@@ -74,7 +81,7 @@ export default function Checkout() {
               <p className="text-sm text-[#9CA3AF]">Table number</p>
               <p className="mt-2 text-base font-medium text-[#F9FAFB]">{selectedTableId ? `Table ${selectedTableId}` : 'No table selected'}</p>
               <p className="mt-4 text-sm text-[#9CA3AF]">Customer name</p>
-              <p className="mt-2 text-base font-medium text-[#F9FAFB]">{customerDetails.name || 'Guest name missing'}</p>
+              <p className="mt-2 text-base font-medium text-[#F9FAFB]">{customerDetails.name || 'Guest'}</p>
               {customerDetails.phone ? <p className="mt-1 text-sm text-[#9CA3AF]">{customerDetails.phone}</p> : null}
             </div>
 

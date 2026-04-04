@@ -309,8 +309,8 @@ export function AppStateProvider({ children }) {
   };
 
   const placeOrder = async ({ paymentMethod, releaseTable = false } = {}) => {
-    if (!selectedTableId || !customerDetails.name || !cartItems.length) {
-      throw new Error('Add a table, customer name, and at least one item before checkout.');
+    if (!selectedTableId || !cartItems.length) {
+      throw new Error('Add a table and at least one item before checkout.');
     }
 
     const matchedTable = tablesWithStatus.find((table) => table.id === selectedTableId);
@@ -319,10 +319,12 @@ export function AppStateProvider({ children }) {
       throw new Error('Select a valid table before placing the order.');
     }
 
+    const finalCustomerName = customerDetails.name?.trim() || 'Guest';
+
     const order = await createOrderWithItemsAndPayment({
       order: {
         table_id: matchedTable.dbId,
-        customer_name: customerDetails.name,
+        customer_name: finalCustomerName,
         payment_method: paymentMethod,
         status: 'pending',
       },
