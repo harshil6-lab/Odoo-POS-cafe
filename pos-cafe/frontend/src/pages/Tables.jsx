@@ -16,9 +16,17 @@ export default function Tables() {
   const [loading, setLoading] = useState(true);
 
   const loadTables = async () => {
+    console.log('Supabase URL:', import.meta.env.VITE_SUPABASE_URL);
+
     const { data, error } = await supabase
       .from('tables')
-      .select('*')
+      .select(`
+        id,
+        table_code,
+        status,
+        seats,
+        floors(name)
+      `)
       .order('table_code');
 
     if (error) {
@@ -27,7 +35,7 @@ export default function Tables() {
       return;
     }
 
-    console.log('Tables:', data);
+    console.log('Tables loaded:', data);
     setTables(data ?? []);
     setLoading(false);
   };

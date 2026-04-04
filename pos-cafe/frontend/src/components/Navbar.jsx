@@ -2,14 +2,14 @@ import { Link, useLocation } from 'react-router-dom';
 import { ArrowRight, Coffee } from 'lucide-react';
 import { Button } from './ui/Button';
 import { useAuth } from '../context/AuthContext';
-import { APP_NAV_LINKS, PUBLIC_NAV_LINKS } from '../utils/roleNavigation';
+import { APP_NAV_LINKS, PUBLIC_NAV_LINKS, getNavLinksForRole } from '../utils/roleNavigation';
 import { useAppState } from '../context/AppStateContext';
 
 export default function Navbar({ isDashboard = false }) {
   const location = useLocation();
-  const { isAuthenticated, user, roleBadge, redirectPath, logout } = useAuth();
+  const { isAuthenticated, user, role, roleBadge, redirectPath, logout } = useAuth();
   const { lastPlacedOrder } = useAppState();
-  const navLinks = isDashboard ? APP_NAV_LINKS : PUBLIC_NAV_LINKS;
+  const navLinks = isDashboard ? getNavLinksForRole(role) : PUBLIC_NAV_LINKS;
   const trackingPath = lastPlacedOrder?.id ? `/track-order?orderId=${lastPlacedOrder.id}` : '/track-order';
 
   if (!isDashboard) {
@@ -91,52 +91,52 @@ export default function Navbar({ isDashboard = false }) {
   }
 
   return (
-    <header className="sticky top-0 z-50 border-b border-white/10 bg-[#0B1220]/90 backdrop-blur-xl">
-      <div className="mx-auto flex min-h-[72px] w-full max-w-7xl items-center gap-4 px-4 md:px-6 lg:px-8">
-        <Link to="/" className="flex shrink-0 items-center gap-3 text-amber-400 transition hover:text-amber-300">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-amber-400/20 bg-amber-500/10">
-            <Coffee size={20} />
+    <header className="sticky top-0 z-50 h-[64px] border-b border-slate-800 bg-[#0B1220] backdrop-blur-md">
+      <div className="mx-auto flex h-full w-full max-w-7xl items-center justify-between px-6">
+        <Link to="/" className="flex items-center gap-3 transition duration-200 hover:opacity-90">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10">
+            <Coffee size={20} className="text-amber-400" />
           </div>
           <div>
-            <p className="text-xs font-medium text-slate-400">Restaurant system</p>
-            <span className="text-base font-semibold text-slate-100">POS Suite</span>
+            <span className="text-lg font-semibold tracking-tight text-white">POS Suite</span>
+            <p className="text-xs text-slate-400">Restaurant system</p>
           </div>
         </Link>
 
-        <nav className="hidden min-w-0 flex-1 items-center justify-center lg:flex">
-          <div className="flex items-center gap-1 rounded-full border border-white/10 bg-white/5 p-1.5">
-            {navLinks.map((link) => {
-              const isActive = location.pathname === link.to;
-              return (
-                <Link
-                  key={link.label}
-                  to={link.to}
-                  className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-                    isActive
-                      ? 'bg-amber-500 text-slate-950 shadow-[0_10px_24px_rgba(245,158,11,0.2)]'
-                      : 'text-slate-300 hover:bg-white/5 hover:text-white'
-                  }`}
-                >
-                  {link.label}
-                </Link>
-              );
-            })}
-          </div>
+        <nav className="ml-8 hidden items-center gap-6 lg:flex">
+          {navLinks.map((link) => {
+            const isActive = location.pathname === link.to;
+            return (
+              <Link
+                key={link.label}
+                to={link.to}
+                className={
+                  isActive
+                    ? 'rounded-lg bg-amber-500 px-4 py-1.5 text-sm font-medium text-black shadow-md'
+                    : 'text-sm font-medium text-slate-300 transition duration-200 hover:text-white'
+                }
+              >
+                {link.label}
+              </Link>
+            );
+          })}
         </nav>
 
-        <div className="ml-auto flex shrink-0 items-center gap-2">
+        <div className="ml-auto flex items-center gap-4">
           {isAuthenticated ? (
             <>
-              <div className="hidden items-center gap-3 rounded-2xl border border-white/10 bg-[#111827] px-4 py-2.5 sm:flex">
-                <div>
-                  <p className="text-sm font-medium text-slate-100">{user?.email}</p>
-                  <p className="text-xs text-slate-400">{roleBadge}</p>
-                </div>
+              <div className="hidden items-center gap-2 rounded-lg bg-slate-800 px-4 py-1.5 sm:flex">
+                <p className="text-sm text-slate-200">{user?.email}</p>
+                {roleBadge && (
+                  <span className="rounded-md bg-amber-500/20 px-2 py-0.5 text-xs font-medium text-amber-400">
+                    {roleBadge}
+                  </span>
+                )}
               </div>
               <button
                 type="button"
                 onClick={() => void logout()}
-                className="h-11 rounded-2xl border border-white/10 bg-[#111827] px-4 text-sm font-medium text-slate-100 transition hover:bg-slate-800"
+                className="rounded-lg border border-slate-700 px-4 py-1.5 text-sm text-slate-300 transition duration-200 hover:bg-slate-800 hover:text-white"
               >
                 Logout
               </button>
@@ -156,11 +156,12 @@ export default function Navbar({ isDashboard = false }) {
             </>
           )}
 
-          <Link to={isAuthenticated ? redirectPath : '/menu'} className="hidden sm:inline-flex">
-            <Button variant="ghost" className="h-11 rounded-2xl px-4 text-sm text-slate-300">
-              {isAuthenticated ? 'Open workspace' : 'Order now'}
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
+          <Link
+            to={isAuthenticated ? redirectPath : '/menu'}
+            className="hidden items-center gap-2 text-sm text-slate-400 transition duration-200 hover:text-white sm:inline-flex"
+          >
+            {isAuthenticated ? 'Open workspace' : 'Order now'}
+            <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
       </div>

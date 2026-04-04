@@ -23,6 +23,7 @@ import Register from "./pages/Register"
 import Billing from "./pages/Billing"
 import Kitchen from "./pages/Kitchen"
 import CustomerDisplay from "./pages/CustomerDisplay"
+import StaffManagement from "./pages/StaffManagement"
 import ProtectedRoute from "./components/ProtectedRoute"
 
 function App() {
@@ -53,12 +54,13 @@ function App() {
       <Route element={<ProtectedRoute />}>
         <Route element={<DashboardLayout />}>
           <Route path="/dashboard" element={<ProtectedRoute allowedRoles={['manager']}><Dashboard /></ProtectedRoute>} />
-          <Route path="/register" element={<ProtectedRoute allowedRoles={['waiter']}><Register /></ProtectedRoute>} />
-          <Route path="/billing" element={<ProtectedRoute allowedRoles={['cashier']}><Billing /></ProtectedRoute>} />
-          <Route path="/kitchen" element={<ProtectedRoute allowedRoles={['manager', 'waiter']}><Kitchen /></ProtectedRoute>} />
-          <Route path="/tables" element={<ProtectedRoute allowedRoles={['manager', 'waiter']}><FloorLayout /></ProtectedRoute>} />
+          <Route path="/register" element={<ProtectedRoute allowedRoles={['manager', 'waiter', 'cashier']}><Register /></ProtectedRoute>} />
+          <Route path="/billing" element={<ProtectedRoute allowedRoles={['manager', 'waiter', 'cashier']}><Billing /></ProtectedRoute>} />
+          <Route path="/kitchen" element={<ProtectedRoute allowedRoles={['manager', 'chef']}><Kitchen /></ProtectedRoute>} />
+          <Route path="/tables" element={<ProtectedRoute allowedRoles={['manager', 'waiter', 'cashier']}><FloorLayout /></ProtectedRoute>} />
           <Route path="/orders" element={<ProtectedRoute allowedRoles={['manager', 'waiter', 'cashier']}><Dashboard /></ProtectedRoute>} />
           <Route path="/reports" element={<ProtectedRoute allowedRoles={['manager']}><Dashboard /></ProtectedRoute>} />
+          <Route path="/staff" element={<ProtectedRoute allowedRoles={['manager']}><StaffManagement /></ProtectedRoute>} />
         </Route>
       </Route>
 

@@ -13,13 +13,42 @@ export const APP_NAV_LINKS = [
   { label: 'Kitchen', to: '/kitchen' },
   { label: 'Orders', to: '/orders' },
   { label: 'Reports', to: '/reports' },
+  { label: 'Staff', to: '/staff' },
 ];
+
+export const rolePermissions = {
+  manager: ['dashboard', 'tables', 'register', 'billing', 'kitchen', 'orders', 'reports', 'staff'],
+  waiter: ['tables', 'register', 'billing'],
+  cashier: ['tables', 'billing'],
+  chef: ['kitchen'],
+};
+
+const routeToPermission = {
+  '/dashboard': 'dashboard',
+  '/register': 'register',
+  '/billing': 'billing',
+  '/tables': 'tables',
+  '/kitchen': 'kitchen',
+  '/orders': 'orders',
+  '/reports': 'reports',
+  '/staff': 'staff',
+};
+
+export function getNavLinksForRole(role) {
+  const normalized = normalizeRole(role);
+  const allowed = rolePermissions[normalized] || [];
+  return APP_NAV_LINKS.filter((link) => {
+    const perm = routeToPermission[link.to];
+    return perm && allowed.includes(perm);
+  });
+}
 
 const redirectByRole = {
   customer: '/menu',
   waiter: '/register',
   manager: '/dashboard',
   cashier: '/billing',
+  chef: '/kitchen',
 };
 
 const badgeLabels = {
@@ -27,6 +56,7 @@ const badgeLabels = {
   waiter: 'Waiter',
   cashier: 'Cashier',
   manager: 'Manager',
+  chef: 'Chef',
 };
 
 export function normalizeRole(role) {
@@ -35,10 +65,6 @@ export function normalizeRole(role) {
   }
 
   const normalized = String(role).toLowerCase();
-
-  if (normalized === 'kitchen') {
-    return 'waiter';
-  }
 
   if (normalized === 'admin') {
     return 'manager';
