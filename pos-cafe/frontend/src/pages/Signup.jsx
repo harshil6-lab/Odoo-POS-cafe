@@ -42,12 +42,15 @@ function Signup() {
       return;
     }
 
+    // Only create auth account — profile is created on first login
     const { data, error: signUpError } = await supabase.auth.signUp({
       email: form.email,
       password: form.password,
       options: {
         data: {
           full_name: form.fullName,
+          phone: form.phone,
+          selected_role: form.role,
         },
       },
     });
@@ -64,16 +67,10 @@ function Signup() {
       return;
     }
 
-    // Trigger creates the users row — only update the role
-    await supabase
-      .from('users')
-      .update({ role: form.role })
-      .eq('id', data.user.id);
-
-    // Sign out so user logs in fresh with correct role
+    // Sign out so user logs in fresh
     await supabase.auth.signOut();
 
-    setSuccess('Staff account created! You can now sign in.');
+    setSuccess('Account created! You can now sign in.');
     setForm({ fullName: '', phone: '', email: '', password: '', role: 'waiter' });
     setLoading(false);
 

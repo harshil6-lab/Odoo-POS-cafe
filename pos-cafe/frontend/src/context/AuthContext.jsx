@@ -155,12 +155,36 @@ export const AuthProvider = ({ children }) => {
       throw new Error('Login failed: No user data returned.');
     }
 
-    // CRITICAL: Fetch and validate role BEFORE updating context
-    const role = await fetchUserRole(data.user.id);
+    // Ensure profile row exists (create on first login if trigger didn't)
+    let role = await fetchUserRole(data.user.id);
 
     if (!role) {
-      await supabase.auth.signOut();
-      throw new Error('Your account does not have a staff role assigned. Contact your manager.');
+      const meta = data.user.user_metadata || {};
+      const selectedRole = meta.selected_role || 'customer';
+
+      const { data: existing } = await supabase
+        .from('users')
+        .select('id')
+        .eq('id', data.user.id)
+        .maybeSingle();
+
+      if (!existing) {
+        await supabase.from('users').insert({
+          id: data.user.id,
+          email: data.user.email,
+          full_name: meta.full_name || 'Staff User',
+          role: selectedRole,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+      } else {
+        await supabase
+          .from('users')
+          .update({ role: selectedRole })
+          .eq('id', data.user.id);
+      }
+
+      role = selectedRole;
     }
 
     setSession(data.session);
