@@ -57,18 +57,20 @@ export default function Checkout() {
       const totalAmount  = parseFloat((subtotal + taxAmount + serviceCharge).toFixed(2));
 
       // Step 3: Insert order with correct table_id (UUID)
+      const paymentMethodMap = { cash: 'cash', card: 'card', upi: 'upi_qr' };
       const { data: newOrder, error: orderError } = await supabase
         .from('orders')
         .insert({
           table_id: tableRecord.id,
           customer_name: finalCustomerName,
+          payment_method: paymentMethodMap[paymentMethod] ?? 'cash',
+          payment_status: 'pending',
           status: 'pending',
-          subtotal: subtotal.toFixed(2),
-          tax_amount: taxAmount.toFixed(2),
-          service_charge: serviceCharge.toFixed(2),
-          total_amount: totalAmount.toFixed(2),
+          tax: taxAmount,
+          service_charge: serviceCharge,
+          total: totalAmount,
         })
-        .select('id, order_number')
+        .select()
         .maybeSingle();
 
       if (orderError) throw new Error(orderError.message);
@@ -88,19 +90,10 @@ export default function Checkout() {
 
       if (itemsError) throw new Error(itemsError.message);
 
-      // Step 5: Record payment in payments table (not on orders row)
-      const paymentMethodMap = { cash: 'cash', card: 'card', upi: 'upi_qr' };
-      await supabase.from('payments').insert({
-        order_id: newOrder.id,
-        method: paymentMethodMap[paymentMethod] ?? 'cash',
-        amount: totalAmount.toFixed(2),
-        status: 'completed',
-      });
-
-      // Step 6: Mark table occupied
+      // Step 5: Mark table occupied
       await supabase.from('tables').update({ status: 'occupied' }).eq('id', tableRecord.id);
 
-      // Step 7: Build receipt object and generate PDFs
+      // Step 6: Build receipt object and generate PDFs
       const completedOrder = {
         id: newOrder.id,
         items: cartItems.map((item) => ({
