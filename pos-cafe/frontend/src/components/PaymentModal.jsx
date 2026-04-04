@@ -1,15 +1,11 @@
 import { useEffect, useState } from 'react';
-import { CreditCard, Landmark, ScanQrCode } from 'lucide-react';
 import QRPopup from './QRPopup';
 import { formatCurrency } from '../utils/helpers';
-import { Button } from './ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
-import { Input } from './ui/input';
 
 const paymentMethods = [
-  { label: 'Cash payment', value: 'cash', icon: Landmark },
-  { label: 'Card payment', value: 'card', icon: CreditCard },
-  { label: 'UPI QR popup', value: 'upi_qr', icon: ScanQrCode },
+  { label: 'Cash', value: 'cash' },
+  { label: 'Card', value: 'card' },
+  { label: 'UPI QR', value: 'upi_qr' },
 ];
 
 function PaymentModal({ isOpen, total, isProcessing, onClose, onConfirm }) {
@@ -25,6 +21,10 @@ function PaymentModal({ isOpen, total, isProcessing, onClose, onConfirm }) {
     }
   }, [isOpen, total]);
 
+  if (!isOpen) {
+    return null;
+  }
+
   const handleSubmit = (event) => {
     event.preventDefault();
     onConfirm({
@@ -35,17 +35,22 @@ function PaymentModal({ isOpen, total, isProcessing, onClose, onConfirm }) {
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => (!open ? onClose() : null)}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Settle bill</DialogTitle>
-          <DialogDescription>Accept cash, card, or UPI QR payments from the POS terminal.</DialogDescription>
-        </DialogHeader>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4">
+      <div className="panel w-full max-w-xl p-6">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-brand-500">Collect payment</p>
+            <h2 className="mt-2 text-2xl font-bold text-slate-900">Settle bill</h2>
+          </div>
+          <button type="button" className="btn-secondary" onClick={onClose}>
+            Close
+          </button>
+        </div>
 
         <form className="mt-6 space-y-5" onSubmit={handleSubmit}>
-          <div className="rounded-[1.75rem] border border-white/10 bg-slate-950/70 p-4">
+          <div className="rounded-2xl bg-slate-50 p-4">
             <p className="text-sm text-slate-500">Amount due</p>
-            <p className="mt-2 text-3xl font-bold text-white">{formatCurrency(total)}</p>
+            <p className="mt-2 text-3xl font-bold text-slate-900">{formatCurrency(total)}</p>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-3">
@@ -54,13 +59,12 @@ function PaymentModal({ isOpen, total, isProcessing, onClose, onConfirm }) {
                 key={option.value}
                 type="button"
                 onClick={() => setMethod(option.value)}
-                className={`rounded-[1.5rem] border px-4 py-4 text-sm font-semibold transition ${
+                className={`rounded-2xl border px-4 py-3 text-sm font-semibold transition ${
                   method === option.value
-                    ? 'border-brand-500 bg-brand-500 text-slate-950'
-                    : 'border-white/10 bg-slate-900 text-slate-300 hover:border-brand-400/60'
+                    ? 'border-brand-500 bg-brand-500 text-white'
+                    : 'border-slate-300 bg-white text-slate-700 hover:border-brand-300'
                 }`}
               >
-                <option.icon className="mx-auto mb-3 h-5 w-5" />
                 {option.label}
               </button>
             ))}
@@ -69,10 +73,10 @@ function PaymentModal({ isOpen, total, isProcessing, onClose, onConfirm }) {
           {method === 'upi_qr' ? <QRPopup total={total} /> : null}
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <label className="block text-sm font-medium text-slate-300">
+            <label className="block text-sm font-medium text-slate-700">
               Paid amount
-              <Input
-                className="mt-2"
+              <input
+                className="input mt-2"
                 type="number"
                 step="0.01"
                 min="0"
@@ -81,10 +85,10 @@ function PaymentModal({ isOpen, total, isProcessing, onClose, onConfirm }) {
               />
             </label>
 
-            <label className="block text-sm font-medium text-slate-300">
+            <label className="block text-sm font-medium text-slate-700">
               Reference
-              <Input
-                className="mt-2"
+              <input
+                className="input mt-2"
                 type="text"
                 placeholder="Txn / terminal reference"
                 value={providerReference}
@@ -93,12 +97,12 @@ function PaymentModal({ isOpen, total, isProcessing, onClose, onConfirm }) {
             </label>
           </div>
 
-          <Button type="submit" className="w-full" disabled={isProcessing}>
+          <button type="submit" className="btn-primary w-full" disabled={isProcessing}>
             {isProcessing ? 'Processing payment...' : `Confirm ${formatCurrency(total)}`}
-          </Button>
+          </button>
         </form>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   );
 }
 
