@@ -57,10 +57,10 @@ const floorPreview = [
 export default function FeaturesSection() {
   return (
     <>
-      <section className="border-b border-[#374151] bg-[#111827] py-20">
+      <section className="border-b border-[#374151] bg-[#111827] py-10">
         <div className="mx-auto max-w-7xl px-6">
-          <h2 className="text-2xl font-semibold text-[#F9FAFB]">How ordering works</h2>
-          <div className="mt-8 grid gap-8 lg:grid-cols-3">
+          <h2 className="text-xl font-medium text-[#F9FAFB]">Hero features</h2>
+          <div className="mt-6 grid gap-6 lg:grid-cols-3">
             {orderingSteps.map((step) => {
               const Icon = step.icon;
               return (
@@ -69,7 +69,7 @@ export default function FeaturesSection() {
                     <Icon className="h-5 w-5" />
                   </div>
                   <h3 className="mt-5 text-base font-medium text-[#F9FAFB]">{step.title}</h3>
-                  <p className="mt-3 text-sm leading-7 text-slate-400">{step.description}</p>
+                  <p className="mt-3 text-sm text-slate-400">{step.description}</p>
                 </article>
               );
             })}
@@ -77,10 +77,10 @@ export default function FeaturesSection() {
         </div>
       </section>
 
-      <section className="border-b border-[#374151] bg-[#0B1220] py-20">
+      <section className="border-b border-[#374151] bg-[#0B1220] py-10">
         <div className="mx-auto max-w-7xl px-6">
-          <h2 className="text-2xl font-semibold text-[#F9FAFB]">Everything your cafe needs to run smoothly</h2>
-          <div className="mt-8 grid gap-8 md:grid-cols-2 xl:grid-cols-4">
+          <h2 className="text-xl font-medium text-[#F9FAFB]">Cafe operations platform</h2>
+          <div className="mt-6 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
             {capabilities.map((item) => {
               const Icon = item.icon;
               return (
@@ -89,7 +89,7 @@ export default function FeaturesSection() {
                     <Icon className="h-5 w-5" />
                   </div>
                   <h3 className="mt-5 text-base font-medium text-[#F9FAFB]">{item.title}</h3>
-                  <p className="mt-3 text-sm leading-7 text-slate-400">{item.description}</p>
+                  <p className="mt-3 text-sm text-slate-400">{item.description}</p>
                 </article>
               );
             })}
@@ -97,15 +97,15 @@ export default function FeaturesSection() {
         </div>
       </section>
 
-      <section className="border-b border-[#374151] bg-[#111827] py-20">
-        <div className="mx-auto grid max-w-7xl gap-8 px-6 lg:grid-cols-[0.95fr,1.05fr] lg:items-center">
+      <section className="border-b border-[#374151] bg-[#111827] py-10">
+        <div className="mx-auto grid max-w-7xl gap-6 px-6 lg:grid-cols-[0.95fr,1.05fr] lg:items-center">
           <div>
-            <h2 className="text-2xl font-semibold text-[#F9FAFB]">Interactive dining layout preview</h2>
-            <p className="mt-4 max-w-xl text-sm leading-7 text-slate-400">
+            <h2 className="text-xl font-medium text-[#F9FAFB]">Table reservation preview</h2>
+            <p className="mt-4 max-w-xl text-sm text-slate-400">
               Get a quick visual of table availability, reservations, and occupied seats before opening the full floor management view.
             </p>
-            <Link to="/tables" className="mt-6 inline-flex">
-              <Button variant="outline" className="h-11 rounded-xl border-[#374151] bg-[#111827] px-5 text-sm text-[#F9FAFB] hover:bg-[#1F2937]">
+            <Link to="/floor-layout" className="mt-6 inline-flex">
+              <Button variant="outline" className="h-11 rounded-lg border border-slate-600 px-5 text-sm text-white hover:bg-slate-800">
                 Open table layout
               </Button>
             </Link>

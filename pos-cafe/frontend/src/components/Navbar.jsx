@@ -3,22 +3,25 @@ import { ArrowRight, Coffee } from 'lucide-react';
 import { Button } from './ui/Button';
 import { useAuth } from '../context/AuthContext';
 import { APP_NAV_LINKS, PUBLIC_NAV_LINKS } from '../utils/roleNavigation';
+import { useAppState } from '../context/AppStateContext';
 
 export default function Navbar({ isDashboard = false }) {
   const location = useLocation();
   const { isAuthenticated, user, roleBadge, redirectPath, logout } = useAuth();
+  const { lastPlacedOrder } = useAppState();
   const navLinks = isDashboard ? APP_NAV_LINKS : PUBLIC_NAV_LINKS;
+  const trackingPath = lastPlacedOrder?.id ? `/track-order?orderId=${lastPlacedOrder.id}` : '/track-order';
 
   if (!isDashboard) {
     return (
-      <header className="sticky top-0 z-50 border-b border-[#374151] bg-[#0B1220]/90 backdrop-blur-xl">
-        <div className="flex min-h-[72px] w-full items-center gap-6 px-6 lg:px-8">
+      <header className="sticky top-0 z-50 border-b border-white/10 bg-[#0B1220] backdrop-blur-xl">
+        <div className="mx-auto flex min-h-[72px] w-full max-w-7xl items-center gap-6 px-6">
           <Link to="/" className="flex shrink-0 items-center gap-3 text-[#F59E0B] transition hover:text-[#D97706]">
             <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-[#374151] bg-[#111827]">
               <Coffee size={20} />
             </div>
             <div>
-              <p className="text-base font-medium text-[#F9FAFB]">POS Suite</p>
+              <p className="text-base font-semibold text-[#F9FAFB]">Cafe POS Suite</p>
             </div>
           </Link>
 
@@ -55,27 +58,32 @@ export default function Navbar({ isDashboard = false }) {
                 >
                   Logout
                 </button>
+                <Link to={redirectPath} className="hidden sm:inline-flex">
+                  <Button variant="ghost" className="h-11 rounded-lg px-4 text-sm text-[#F9FAFB] hover:bg-[#111827]">
+                    Open workspace
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
               </>
             ) : (
               <>
-                <Link to="/login">
-                  <Button variant="outline" className="h-11 border-[#374151] bg-[#111827] px-5 text-sm text-[#F9FAFB] hover:bg-[#1F2937]">
-                    Login
+                <Link to="/reserve-table">
+                  <Button variant="outline" className="h-11 rounded-lg border border-slate-600 px-5 text-sm text-white hover:bg-slate-800">
+                    Reserve table
                   </Button>
                 </Link>
-                <Link to="/signup">
-                  <Button className="h-11 border-[#F59E0B] bg-[#F59E0B] px-5 text-sm text-[#0B1220] hover:bg-[#D97706]">
-                    Signup
+                <Link to={trackingPath}>
+                  <Button variant="outline" className="h-11 rounded-lg border border-slate-600 px-5 text-sm text-white hover:bg-slate-800">
+                    Track order
+                  </Button>
+                </Link>
+                <Link to="/login">
+                  <Button className="h-11 rounded-lg bg-[#F59E0B] px-5 text-sm text-black hover:brightness-110">
+                    Login
                   </Button>
                 </Link>
               </>
             )}
-            <Link to={isAuthenticated ? redirectPath : '/menu'} className="hidden sm:inline-flex">
-              <Button variant="ghost" className="h-11 px-4 text-sm text-[#F9FAFB] hover:bg-[#111827]">
-                {isAuthenticated ? 'Open workspace' : 'Order now'}
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
           </div>
         </div>
       </header>

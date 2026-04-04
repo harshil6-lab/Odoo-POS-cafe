@@ -1,18 +1,19 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { useAuth } from './AuthContext';
 import { calculateOrderTotals } from '../utils/helpers';
 import { getCategories, getMenuItems } from '../services/menuService';
 import { createOrderWithItemsAndPayment, getOrders, updateOrderStatus } from '../services/orderService';
 import { createReservation, getReservations } from '../services/reservationService';
 import { getTables, updateTableStatus } from '../services/tableService';
-import { initialReservations, kitchenTickets as seedKitchenTickets, menuItems as seedMenuItems, tablesData } from '../data/restaurantData';
 
 const AppStateContext = createContext(null);
 
 const STORAGE_KEYS = {
   tableId: 'table_id',
+  tableCode: 'table_code',
   cart: 'pos-cafe-customer-cart',
   customer: 'pos-cafe-customer-details',
+  lastOrder: 'pos-cafe-last-order',
 };
 
 function getStorage(type) {
@@ -53,7 +54,7 @@ function readTableId() {
     return null;
   }
 
-  return window.sessionStorage.getItem(STORAGE_KEYS.tableId);
+  return window.sessionStorage.getItem(STORAGE_KEYS.tableId) || window.sessionStorage.getItem(STORAGE_KEYS.tableCode);
 }
 
 function writeTableId(tableId) {
@@ -63,18 +64,12 @@ function writeTableId(tableId) {
 
   if (!tableId) {
     window.sessionStorage.removeItem(STORAGE_KEYS.tableId);
+    window.sessionStorage.removeItem(STORAGE_KEYS.tableCode);
     return;
   }
 
   window.sessionStorage.setItem(STORAGE_KEYS.tableId, tableId);
-}
-
-function createReservationId(tableId) {
-  return `RSV-${tableId}-${Date.now()}`;
-}
-
-function createOrderId() {
-  return `ORD-${String(Date.now()).slice(-6)}`;
+  window.sessionStorage.setItem(STORAGE_KEYS.tableCode, tableId);
 }
 
 export function AppStateProvider({ children }) {
@@ -82,11 +77,12 @@ export function AppStateProvider({ children }) {
   const [selectedTableId, setSelectedTableIdState] = useState(() => readTableId());
   const [cartItems, setCartItems] = useState(() => readStorage(STORAGE_KEYS.cart, []));
   const [customerDetails, setCustomerDetailsState] = useState(() => readStorage(STORAGE_KEYS.customer, { name: '', phone: '' }));
-  const [catalogItems, setCatalogItems] = useState(seedMenuItems);
+  const [catalogItems, setCatalogItems] = useState([]);
   const [catalogCategories, setCatalogCategories] = useState([]);
-  const [tables, setTables] = useState(tablesData);
-  const [reservations, setReservations] = useState(initialReservations);
+  const [tables, setTables] = useState([]);
+  const [reservations, setReservations] = useState([]);
   const [liveOrders, setLiveOrders] = useState([]);
+  const [lastPlacedOrder, setLastPlacedOrder] = useState(() => readStorage(STORAGE_KEYS.lastOrder, null));
 
   useEffect(() => {
     writeTableId(selectedTableId);
@@ -101,44 +97,40 @@ export function AppStateProvider({ children }) {
   }, [customerDetails]);
 
   useEffect(() => {
+    writeStorage(STORAGE_KEYS.lastOrder, lastPlacedOrder);
+  }, [lastPlacedOrder]);
+
+  useEffect(() => {
     let active = true;
 
     const loadPublicData = async () => {
-      try {
-        const [menuData, categoryData, tableData, reservationData] = await Promise.all([
-          getMenuItems(),
-          getCategories(),
-          getTables(),
-          getReservations(),
-        ]);
+      const [menuData, categoryData, tableData, reservationData] = await Promise.all([
+        getMenuItems(),
+        getCategories(),
+        getTables(),
+        getReservations(),
+      ]);
 
-        if (!active) {
-          return;
-        }
-
-        if (menuData.length) {
-          setCatalogItems(menuData);
-        }
-
-        setCatalogCategories(categoryData);
-
-        if (tableData.length) {
-          setTables(tableData);
-        }
-
-        setReservations(reservationData);
-      } catch {
-        if (!active) {
-          return;
-        }
-
-        setCatalogItems(seedMenuItems);
-        setTables(tablesData);
-        setReservations(initialReservations);
+      if (!active) {
+        return;
       }
+
+      setCatalogItems(menuData);
+      setCatalogCategories(categoryData);
+      setTables(tableData);
+      setReservations(reservationData);
     };
 
-    void loadPublicData();
+    void loadPublicData().catch(() => {
+      if (!active) {
+        return;
+      }
+
+      setCatalogItems([]);
+      setCatalogCategories([]);
+      setTables([]);
+      setReservations([]);
+    });
 
     return () => {
       active = false;
@@ -202,9 +194,36 @@ export function AppStateProvider({ children }) {
           items: order.items.map((item) => `${item.name} x${item.quantity}`),
           timer: 'Live',
         }))
-      : seedKitchenTickets),
+      : []),
     [liveOrders],
   );
+
+  const findTable = (tableIdentifier) => tables.find((table) => table.id === tableIdentifier || table.dbId === tableIdentifier);
+
+  const refreshTables = useCallback(async () => {
+    const nextTables = await getTables();
+    setTables(nextTables);
+    return nextTables;
+  }, []);
+
+  const refreshCatalog = useCallback(async () => {
+    const [menuData, categoryData] = await Promise.all([getMenuItems(), getCategories()]);
+    setCatalogItems(menuData);
+    setCatalogCategories(categoryData);
+    return { menuData, categoryData };
+  }, []);
+
+  const refreshOrders = useCallback(async () => {
+    const orders = await getOrders();
+    setLiveOrders(orders);
+    return orders;
+  }, []);
+
+  const refreshReservations = useCallback(async () => {
+    const nextReservations = await getReservations();
+    setReservations(nextReservations);
+    return nextReservations;
+  }, []);
 
   const setSelectedTableId = (tableId) => {
     setSelectedTableIdState(tableId);
@@ -272,7 +291,7 @@ export function AppStateProvider({ children }) {
     return createdReservation;
   };
 
-  const placeOrder = async (paymentMethod) => {
+  const placeOrder = async ({ paymentMethod, releaseTable = false } = {}) => {
     if (!selectedTableId || !customerDetails.name || !cartItems.length) {
       throw new Error('Add a table, customer name, and at least one item before checkout.');
     }
@@ -297,10 +316,59 @@ export function AppStateProvider({ children }) {
       })),
     });
 
+    if (releaseTable) {
+      await updateTableStatus(matchedTable.dbId, 'available');
+    }
+
     setLiveOrders((current) => [order, ...current]);
-    setTables((current) => current.map((table) => (table.id === selectedTableId ? { ...table, status: 'occupied' } : table)));
+    setTables((current) => current.map((table) => (
+      table.id === selectedTableId
+        ? { ...table, status: releaseTable ? 'available' : 'occupied' }
+        : table
+    )));
+    setLastPlacedOrder({
+      ...order,
+      customer: {
+        name: customerDetails.name,
+        phone: customerDetails.phone,
+      },
+      subtotal: totals.subtotal,
+      taxAmount: totals.taxAmount,
+      serviceCharge: totals.serviceCharge,
+      total: totals.total,
+      paymentMethod,
+      estimatedPrepMinutes: Math.max(12, order.items.length * 6),
+      ticketGeneratedAt: new Date().toISOString(),
+    });
     setCartItems([]);
+    setCustomerDetailsState({ name: '', phone: '' });
+    writeTableId(releaseTable ? null : selectedTableId);
+
+    if (releaseTable) {
+      setSelectedTableIdState(null);
+    }
+
     return order;
+  };
+
+  const clearLastPlacedOrder = () => {
+    setLastPlacedOrder(null);
+  };
+
+  const releaseSelectedTable = async () => {
+    const matchedTable = findTable(selectedTableId);
+
+    if (!matchedTable?.dbId) {
+      writeTableId(null);
+      setSelectedTableIdState(null);
+      return null;
+    }
+
+    const updatedTable = await updateTableStatus(matchedTable.dbId, 'available');
+    setTables((current) => current.map((table) => (table.id === updatedTable.id ? updatedTable : table)));
+    writeTableId(null);
+    setSelectedTableIdState(null);
+    return updatedTable;
   };
 
   const syncKitchenTicketStatus = async (orderId, nextStatus) => {
@@ -339,7 +407,14 @@ export function AppStateProvider({ children }) {
     firstFloorTables,
     kitchenTickets,
     liveOrders,
+    lastPlacedOrder,
     placeOrder,
+    clearLastPlacedOrder,
+    refreshCatalog,
+    refreshTables,
+    refreshOrders,
+    refreshReservations,
+    releaseSelectedTable,
     syncKitchenTicketStatus,
   };
 

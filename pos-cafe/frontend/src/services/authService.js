@@ -1,7 +1,5 @@
 import { supabase } from './supabaseClient';
 
-const STAFF_ROLES = ['manager', 'waiter', 'cashier'];
-
 const AUTH_RATE_LIMIT_MS = 60 * 1000;
 
 function getCooldownKey(action) {
@@ -97,19 +95,40 @@ export const authService = {
   },
 
   async getUserRole(userId) {
-    const { data, error } = await supabase.rpc('get_user_role', { user_id: userId });
+    const { data, error } = await supabase
+      .from('users')
+      .select(`
+        role_id,
+        roles (
+          name
+        )
+      `)
+      .eq('id', userId)
+      .maybeSingle();
 
     if (error) {
-      throw error;
+      console.error('Role fetch error:', error);
+      return null;
     }
 
-    return String(data || '').toLowerCase();
+    console.log('Role fetch result:', data);
+
+    return data?.roles?.name ?? null;
   },
 
   async getRoleProfile(userId) {
     const { data, error } = await supabase
       .from('users')
-      .select('id, full_name, email, created_at, role:roles(id, name)')
+      .select(`
+        id,
+        full_name,
+        email,
+        created_at,
+        role_id,
+        roles (
+          name
+        )
+      `)
       .eq('id', userId)
       .maybeSingle();
 
@@ -126,8 +145,8 @@ export const authService = {
       full_name: data.full_name || null,
       email: data.email,
       created_at: data.created_at,
-      role: String(data.role?.name || '').toLowerCase(),
-      role_id: data.role?.id ?? null,
+      role: String(data.roles?.name || '').toLowerCase(),
+      role_id: data.role_id ?? null,
     };
   },
 
@@ -143,17 +162,7 @@ export const authService = {
       throw normalizeAuthError(error, 'login');
     }
 
-    const profile = await this.getRoleProfile(data.user.id);
-
-    if (!profile || !STAFF_ROLES.includes(profile.role)) {
-      await supabase.auth.signOut();
-      throw new Error('Only staff accounts can access this app.');
-    }
-
-    return {
-      ...data,
-      profile,
-    };
+    return data;
   },
 
   async signUp({ email, password, fullName, phone }) {

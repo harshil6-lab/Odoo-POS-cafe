@@ -3,10 +3,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
+import { supabase } from '../services/supabaseClient';
 
 function Login() {
   const navigate = useNavigate();
-  const { user, login, redirectPath, loading: authLoading } = useAuth();
+  const { user, fetchUserRole, redirectPath, loading: authLoading } = useAuth();
   const [form, setForm] = useState({ email: '', password: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -24,19 +25,37 @@ function Login() {
     }));
   };
 
-  const handleSubmit = async (event) => {
+  const handleLogin = async (event) => {
     event.preventDefault();
     setLoading(true);
     setError('');
 
-    try {
-      const result = await login(form);
-      navigate(result.redirectTo, { replace: true });
-    } catch (err) {
-      setError(err.message ?? 'Unable to sign in.');
-    } finally {
+    const { data, error: signInError } = await supabase.auth.signInWithPassword({
+      email: form.email,
+      password: form.password,
+    });
+
+    if (signInError) {
+      setError(signInError.message);
       setLoading(false);
+      return;
     }
+
+    const role = await fetchUserRole(data.user.id);
+
+    console.log('Fetched role:', role);
+
+    if (!role) {
+      setError('Only staff accounts can access this app.');
+      setLoading(false);
+      return;
+    }
+
+    if (role === 'manager') navigate('/dashboard');
+    else if (role === 'waiter') navigate('/register');
+    else if (role === 'cashier') navigate('/billing');
+
+    setLoading(false);
   };
 
   return (
@@ -52,7 +71,7 @@ function Login() {
           </p>
         </div>
 
-        <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
+        <form className="mt-6 space-y-4" onSubmit={handleLogin}>
           <label className="grid gap-2 text-sm font-medium text-[#F9FAFB]">
             Email
             <Input

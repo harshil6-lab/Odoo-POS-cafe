@@ -48,3 +48,21 @@ export async function getMenuItems() {
 
   return (data ?? []).map(mapMenuItem);
 }
+
+export async function updateMenuItemAvailability(menuItemId, isAvailable) {
+  const { data, error } = await supabase
+    .from('menu_items')
+    .update({
+      is_available: Boolean(isAvailable),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', menuItemId)
+    .select(menuSelect)
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return mapMenuItem(data);
+}

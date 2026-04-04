@@ -14,10 +14,13 @@ import Login from "./pages/Login"
 import Signup from "./pages/Signup"
 import Checkout from "./pages/Checkout"
 import TableEntry from "./pages/TableEntry"
+import ThankYou from "./pages/ThankYou"
+import TrackOrder from "./pages/TrackOrder"
 
 // Admin Pages
 import Dashboard from "./pages/Dashboard"
 import Register from "./pages/Register"
+import Billing from "./pages/Billing"
 import Kitchen from "./pages/Kitchen"
 import CustomerDisplay from "./pages/CustomerDisplay"
 import ProtectedRoute from "./components/ProtectedRoute"
@@ -31,6 +34,8 @@ function App() {
         <Route path="/" element={<Landing />} />
         <Route path="/menu" element={<Menu />} />
         <Route path="/checkout" element={<Checkout />} />
+        <Route path="/thank-you" element={<ThankYou />} />
+        <Route path="/track-order" element={<TrackOrder />} />
         <Route path="/reserve-table" element={<ReserveTable />} />
         <Route path="/book-table" element={<Navigate to="/reserve-table" replace />} />
         <Route path="/floor-layout" element={<FloorLayout />} />
@@ -49,7 +54,7 @@ function App() {
         <Route element={<DashboardLayout />}>
           <Route path="/dashboard" element={<ProtectedRoute allowedRoles={['manager']}><Dashboard /></ProtectedRoute>} />
           <Route path="/register" element={<ProtectedRoute allowedRoles={['waiter']}><Register /></ProtectedRoute>} />
-          <Route path="/billing" element={<ProtectedRoute allowedRoles={['cashier']}><Register /></ProtectedRoute>} />
+          <Route path="/billing" element={<ProtectedRoute allowedRoles={['cashier']}><Billing /></ProtectedRoute>} />
           <Route path="/kitchen" element={<ProtectedRoute allowedRoles={['manager', 'waiter']}><Kitchen /></ProtectedRoute>} />
           <Route path="/tables" element={<ProtectedRoute allowedRoles={['manager', 'waiter']}><FloorLayout /></ProtectedRoute>} />
           <Route path="/orders" element={<ProtectedRoute allowedRoles={['manager', 'waiter', 'cashier']}><Dashboard /></ProtectedRoute>} />

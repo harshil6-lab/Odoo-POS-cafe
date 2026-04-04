@@ -1,7 +1,8 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
-import { tablesData } from '../data/restaurantData';
+import { supabase } from '../services/supabaseClient';
 
 const statusTone = {
   available: 'border-teal-400/20 bg-teal-400/10 text-teal-300',
@@ -11,9 +12,33 @@ const statusTone = {
 };
 
 export default function Tables() {
-  const occupiedCount = tablesData.filter((table) => table.status === 'occupied').length;
-  const reservedCount = tablesData.filter((table) => table.status === 'reserved').length;
-  const availableCount = tablesData.filter((table) => table.status === 'available').length;
+  const [tables, setTables] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadTables = async () => {
+    const { data, error } = await supabase
+      .from('tables')
+      .select('*')
+      .order('table_code');
+
+    if (error) {
+      console.error('Tables fetch error:', error);
+      setLoading(false);
+      return;
+    }
+
+    console.log('Tables:', data);
+    setTables(data ?? []);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    loadTables();
+  }, []);
+
+  const occupiedCount = tables.filter((t) => t.status === 'occupied').length;
+  const reservedCount = tables.filter((t) => t.status === 'reserved').length;
+  const availableCount = tables.filter((t) => t.status === 'available').length;
 
   return (
     <div className="space-y-6">
@@ -43,15 +68,19 @@ export default function Tables() {
       </div>
 
       <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-        {tablesData.map((table) => (
+        {loading ? (
+          <p className="col-span-full text-center text-sm text-slate-400">Loading tables...</p>
+        ) : tables.length === 0 ? (
+          <p className="col-span-full text-center text-sm text-slate-400">No tables found in Supabase.</p>
+        ) : tables.map((table) => (
           <Card key={table.id} className="overflow-hidden">
             <CardHeader className="p-5">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-sm font-medium text-slate-400">{table.zone}</p>
-                  <CardTitle className="mt-2 text-2xl">{table.label}</CardTitle>
+                  <p className="text-sm font-medium text-slate-400">Floor</p>
+                  <CardTitle className="mt-2 text-2xl">Table {table.table_code}</CardTitle>
                 </div>
-                <span className={`rounded-full border px-3 py-1 text-[11px] font-medium tracking-[0.14em] ${statusTone[table.status]}`}>
+                <span className={`rounded-full border px-3 py-1 text-[11px] font-medium tracking-[0.14em] ${statusTone[table.status] || ''}`}>
                   {table.status}
                 </span>
               </div>
@@ -63,16 +92,10 @@ export default function Tables() {
                   <span className="text-slate-200">{table.seats}</span>
                 </div>
                 <div className="mt-3 flex items-center justify-between text-sm text-slate-400">
-                  <span>Server</span>
-                  <span className="text-slate-200">{table.server}</span>
-                </div>
-                <div className="mt-3 flex items-center justify-between text-sm text-slate-400">
-                  <span>Order amount</span>
-                  <span className="font-medium text-amber-300">{table.orderAmount}</span>
+                  <span>Table code</span>
+                  <span className="text-slate-200">{table.table_code}</span>
                 </div>
               </div>
-
-              <p className="text-sm leading-7 text-slate-400">{table.note}</p>
 
               <Link to="/register" className="inline-flex w-full">
                 <Button variant="outline" className="h-11 w-full text-sm">Open register</Button>

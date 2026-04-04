@@ -1,15 +1,13 @@
 import { createContext, useContext, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { authService } from '../services/authService';
-import { getRedirectPathForRole, getRoleBadgeLabel, normalizeRole } from '../utils/roleNavigation';
+import { supabase } from '../services/supabaseClient';
+import { getRedirectPathForRole, getRoleBadgeLabel } from '../utils/roleNavigation';
 
 const AuthContext = createContext(null);
-const STAFF_ROLES = ['manager', 'waiter', 'cashier'];
-
-function isStaffRole(role) {
-  return STAFF_ROLES.includes(normalizeRole(role));
-}
 
 export function AuthProvider({ children }) {
+  const navigate = useNavigate();
   const [session, setSession] = useState(null);
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
@@ -17,76 +15,69 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   const fetchUserRole = async (userId) => {
-    return authService.getUserRole(userId);
+    const { data, error } = await supabase
+      .from('users')
+      .select(`
+        id,
+        roles (
+          name
+        )
+      `)
+      .eq('id', userId)
+      .single();
+
+    if (error) {
+      console.error('Role fetch failed:', error);
+      return null;
+    }
+
+    return data?.roles?.name ?? null;
   };
 
   useEffect(() => {
-    let mounted = true;
+    const restoreSession = async () => {
+      const { data } = await supabase.auth.getSession();
 
-    const clearAuth = () => {
-      if (!mounted) {
+      if (!data.session) {
+        setLoading(false);
         return;
       }
 
-      setSession(null);
-      setUser(null);
-      setProfile(null);
-      setRole(null);
+      const role = await fetchUserRole(data.session.user.id);
+
+      setSession(data.session);
+      setUser(data.session.user);
+      setRole(role);
+      setLoading(false);
+
+      if (!role) return;
+
+      if (role === 'manager') navigate('/dashboard');
+      if (role === 'waiter') navigate('/register');
+      if (role === 'cashier') navigate('/billing');
     };
 
-    const hydrateAuth = async (nextSession) => {
-      if (!mounted) {
-        return;
-      }
-
-      if (!nextSession?.user) {
-        clearAuth();
-        return;
-      }
-
-      try {
-        const nextProfile = await authService.getRoleProfile(nextSession.user.id);
-
-        if (!nextProfile || !isStaffRole(nextProfile.role)) {
-          await authService.signOut();
-          clearAuth();
-          return;
-        }
-
-        if (!mounted) {
-          return;
-        }
-
-        setSession(nextSession);
-        setUser(nextSession.user);
-        setProfile(nextProfile);
-        setRole(normalizeRole(nextProfile.role));
-      } catch {
-        clearAuth();
-      }
-    };
-
-    void authService
-      .getSession()
-      .then(({ session: currentSession }) => hydrateAuth(currentSession))
-      .finally(() => {
-        if (mounted) {
-          setLoading(false);
-        }
-      });
+    restoreSession();
 
     const {
       data: { subscription },
-    } = authService.onAuthStateChange((_event, nextSession) => {
-      void hydrateAuth(nextSession).finally(() => {
-        if (mounted) {
-          setLoading(false);
-        }
-      });
+    } = supabase.auth.onAuthStateChange(async (_event, nextSession) => {
+      if (!nextSession?.user) {
+        setSession(null);
+        setUser(null);
+        setRole(null);
+        setProfile(null);
+        setLoading(false);
+        return;
+      }
+
+      const role = await fetchUserRole(nextSession.user.id);
+      setSession(nextSession);
+      setUser(nextSession.user);
+      setRole(role);
     });
 
     return () => {
-      mounted = false;
       subscription.unsubscribe();
     };
   }, []);
@@ -96,18 +87,27 @@ export function AuthProvider({ children }) {
       throw new Error('Enter email and password to continue.');
     }
 
-    const result = await authService.signIn(credentials);
-    const nextRole = normalizeRole(result.profile?.role);
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: credentials.email,
+      password: credentials.password,
+    });
 
-    setSession(result.session);
-    setUser(result.user);
-    setProfile(result.profile);
-    setRole(nextRole);
+    if (error) throw new Error(error.message);
 
-    return {
-      data: result,
-      redirectTo: getRedirectPathForRole(nextRole),
-    };
+    const role = await fetchUserRole(data.user.id);
+
+    console.log('Fetched role:', role);
+
+    if (!role) {
+      await supabase.auth.signOut();
+      throw new Error('Only staff accounts can access this app.');
+    }
+
+    setSession(data.session);
+    setUser(data.user);
+    setRole(role);
+
+    return { redirectTo: role === 'manager' ? '/dashboard' : role === 'waiter' ? '/register' : '/billing' };
   };
 
   const signup = async (payload) => {

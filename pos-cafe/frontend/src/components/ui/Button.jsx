@@ -6,9 +6,9 @@ const Button = React.forwardRef(({ className, variant = "default", size = "defau
   const Comp = asChild ? Slot : "button"
   
   const variants = {
-    default: "border border-amber-400/60 bg-amber-500 text-slate-950 shadow-[0_12px_30px_rgba(245,158,11,0.18)] hover:bg-amber-400",
+    default: "bg-[#F59E0B] text-black hover:brightness-110",
     destructive: "border border-red-500/30 bg-red-500/90 text-white shadow-[0_12px_30px_rgba(239,68,68,0.18)] hover:bg-red-500",
-    outline: "border border-white/10 bg-slate-900/70 text-slate-100 hover:border-white/20 hover:bg-slate-800/80",
+    outline: "border border-slate-600 bg-transparent text-white hover:bg-slate-800",
     secondary: "border border-teal-400/30 bg-teal-400/90 text-slate-950 shadow-[0_12px_30px_rgba(45,212,191,0.16)] hover:bg-teal-300",
     ghost: "text-slate-300 hover:bg-white/5 hover:text-white",
     link: "text-amber-500 underline-offset-4 hover:underline",
@@ -27,7 +27,7 @@ const Button = React.forwardRef(({ className, variant = "default", size = "defau
   return (
     <Comp
       className={cn(
-        "inline-flex items-center justify-center whitespace-nowrap rounded-xl text-sm font-medium ring-offset-background transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+        "inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium ring-offset-background transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
         variantClass,
         sizeClass,
         className

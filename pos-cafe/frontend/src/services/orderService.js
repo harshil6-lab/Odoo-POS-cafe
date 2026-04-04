@@ -21,10 +21,11 @@ function titleCase(status) {
 }
 
 function mapOrder(order) {
+  const status = String(order.status || 'pending').toLowerCase();
   const items = (order.items ?? []).map((item) => ({
     id: item.id,
     quantity: item.quantity,
-    preferences: item.preferences ?? {},
+    preferences: item.preferences ?? [],
     name: item.menu_item?.name ?? 'Menu item',
     price: Number(item.menu_item?.price ?? 0),
     imageUrl: item.menu_item?.image_url ?? null,
@@ -39,14 +40,15 @@ function mapOrder(order) {
       name: order.customer_name,
     },
     paymentMethod: order.payment_method,
-    status: titleCase(order.status),
+    status,
+    statusLabel: titleCase(status),
     createdAt: order.created_at,
     items,
     total: items.reduce((sum, item) => sum + item.price * item.quantity, 0),
   };
 }
 
-async function getOrderById(orderId) {
+export async function getOrderById(orderId) {
   const { data, error } = await supabase.from('orders').select(orderSelect).eq('id', orderId).single();
 
   if (error) {
@@ -71,7 +73,7 @@ export async function addOrderItems(orderId, items) {
     order_id: orderId,
     menu_item_id: item.menu_item_id,
     quantity: item.quantity,
-    preferences: item.preferences ?? {},
+    preferences: item.preferences ?? [],
   }));
 
   const { data, error } = await supabase.from('order_items').insert(rows).select('*');

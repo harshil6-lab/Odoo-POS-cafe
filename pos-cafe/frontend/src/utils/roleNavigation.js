@@ -1,7 +1,7 @@
 export const PUBLIC_NAV_LINKS = [
   { label: 'Menu', to: '/menu' },
+  { label: 'About', to: '/' },
   { label: 'Reserve table', to: '/reserve-table' },
-  { label: 'Floor layout', to: '/floor-layout' },
   { label: 'Contact', to: '/contact' },
 ];
 
