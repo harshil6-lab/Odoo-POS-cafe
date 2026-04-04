@@ -8,15 +8,6 @@ import { Input } from '../components/ui/Input';
 
 const STAFF_ROLES = ['manager', 'waiter', 'cashier', 'chef'];
 
-const getRoleId = async (roleName) => {
-  const { data } = await supabase
-    .from('roles')
-    .select('id')
-    .eq('name', roleName)
-    .single();
-  return data?.id ?? null;
-};
-
 function Signup() {
   const navigate = useNavigate();
   const { user, signup, redirectPath, loading: authLoading } = useAuth();
@@ -47,16 +38,17 @@ function Signup() {
     try {
       const result = await signup(form);
 
-      // Insert into public.users with selected role
+      // Insert into public.users with selected role (uses role enum directly, no roles table)
       const authUser = result.data?.user;
       if (authUser) {
-        const roleId = await getRoleId(form.role);
-        if (roleId) {
-          await supabase.from('users').insert({
-            id: authUser.id,
-            email: authUser.email,
-            role_id: roleId,
-          });
+        const { error: insertError } = await supabase.from('users').insert({
+          id: authUser.id,
+          email: authUser.email,
+          full_name: form.fullName,
+          role: form.role,
+        });
+        if (insertError) {
+          throw new Error('Account created but profile insert failed: ' + insertError.message);
         }
       }
 
