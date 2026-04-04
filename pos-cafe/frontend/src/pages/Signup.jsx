@@ -48,13 +48,10 @@ function Signup() {
         throw new Error('Signup failed: No user created.');
       }
 
-      // Supabase trigger auto-creates the user row — just update the role and name
+      // Supabase trigger auto-creates the user row — only update the role
       const { data: updatedUser, error: updateError } = await supabase
         .from('users')
-        .update({
-          role: form.role,
-          full_name: form.fullName || 'Staff Member',
-        })
+        .update({ role: form.role })
         .eq('id', authUser.id)
         .select('id, email, role, full_name')
         .maybeSingle();
