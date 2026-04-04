@@ -1,4 +1,207 @@
-import { supabase } from './supabaseClient';
+import { buildCsv, calculateOrderTotals, cloneValue, formatCurrency } from '../utils/helpers';
+import {
+  mockCategories,
+  mockOrders,
+  mockPaymentAnalytics,
+  mockProducts,
+  mockRevenueTrend,
+  mockSessions,
+  mockTables,
+} from '../utils/mockData';
+
+let tablesStore = cloneValue(mockTables);
+let ordersStore = cloneValue(mockOrders).map((order) => ({
+  ...order,
+  items: order.items.map((item) => ({
+    ...item,
+    lineTotal: item.quantity * item.unitPrice,
+  })),
+}));
+
+const emitOrdersUpdate = () => {
+  window.dispatchEvent(new CustomEvent('orders:changed'));
+  window.dispatchEvent(new CustomEvent('tables:changed'));
+};
+
+const enrichOrder = (order) => {
+  const table = tablesStore.find((entry) => entry.id === order.tableId) ?? null;
+  const categoryTotals = {};
+  const items = order.items.map((item) => {
+    const product = mockProducts.find((entry) => entry.id === item.productId) ?? null;
+    const category = mockCategories.find((entry) => entry.id === product?.categoryId) ?? null;
+
+    if (category) {
+      categoryTotals[category.name] = (categoryTotals[category.name] ?? 0) + item.quantity * item.unitPrice;
+    }
+
+    return {
+      ...item,
+      product,
+      category,
+      lineTotal: item.lineTotal ?? item.quantity * item.unitPrice,
+    };
+  });
+  const totals = calculateOrderTotals(items);
+
+  return {
+    ...order,
+    table,
+    items,
+    totals,
+    totalAmount: totals.total,
+    subtotal: totals.subtotal,
+    categoryTotals,
+  };
+};
+
+export async function fetchTables() {
+  return cloneValue(tablesStore);
+}
+
+export async function fetchOrders() {
+  return cloneValue(ordersStore).map(enrichOrder).sort((left, right) => right.createdAt.localeCompare(left.createdAt));
+}
+
+export async function fetchDashboardSummary() {
+  const orders = await fetchOrders();
+  const tables = await fetchTables();
+  const revenue = orders.reduce((sum, order) => sum + order.totalAmount, 0);
+  const ordersToday = orders.length;
+  const activeTables = tables.filter((table) => ['occupied', 'reserved'].includes(table.status)).length;
+  const averageOrderValue = orders.length ? revenue / orders.length : 0;
+
+  const categoryDistribution = mockCategories.map((category) => ({
+    name: category.name,
+    value: orders.reduce(
+      (sum, order) => sum + order.items.filter((item) => item.category?.id === category.id).length,
+      0,
+    ),
+    color: category.color,
+  }));
+
+  const recentActivity = orders.slice(0, 5).map((order) => ({
+    id: order.id,
+    title: `Order #${order.orderNumber}`,
+    description: `${order.table?.name || 'Counter'} • ${order.items.length} items • ${order.status}`,
+    timestamp: order.createdAt,
+  }));
+
+  return {
+    revenue,
+    ordersToday,
+    activeTables,
+    averageOrderValue,
+    revenueTrend: mockRevenueTrend,
+    categoryDistribution,
+    recentActivity,
+  };
+}
+
+export async function fetchReportsSummary() {
+  const orders = await fetchOrders();
+  const revenue = mockRevenueTrend;
+  const categoryPie = mockCategories.map((category) => ({
+    name: category.name,
+    value: orders.reduce((sum, order) => sum + Number(order.categoryTotals[category.name] ?? 0), 0),
+    color: category.color,
+  }));
+
+  const paymentAnalytics = mockPaymentAnalytics.map((entry) => ({
+    ...entry,
+    amount: orders
+      .filter((order) => order.paymentMethod === entry.label.toLowerCase().replace(' ', '_'))
+      .reduce((sum, order) => sum + order.totalAmount, 0),
+  }));
+
+  return {
+    revenue,
+    categoryPie,
+    sessionAnalytics: mockSessions,
+    paymentAnalytics,
+  };
+}
+
+export async function createOrder(payload) {
+  const nextOrderNumber = String(2400 + ordersStore.length + 1);
+  const order = {
+    id: `ord-${Date.now()}`,
+    orderNumber: nextOrderNumber,
+    tableId: payload.tableId || null,
+    customerName: payload.customerName || 'Walk-in',
+    status: payload.status || 'to-cook',
+    diningStatus: payload.tableId ? 'occupied' : 'counter',
+    paymentMethod: payload.paymentMethod,
+    paymentStatus: payload.paymentStatus ?? 'paid',
+    notes: payload.notes || '',
+    createdAt: new Date().toISOString(),
+    items: payload.items.map((item) => ({
+      id: `ord-item-${Date.now()}-${item.productId}`,
+      productId: item.productId,
+      name: item.name,
+      quantity: item.quantity,
+      unitPrice: item.unitPrice,
+      lineTotal: item.quantity * item.unitPrice,
+    })),
+  };
+
+  ordersStore = [order, ...ordersStore];
+
+  if (payload.tableId) {
+    tablesStore = tablesStore.map((table) =>
+      table.id === payload.tableId ? { ...table, status: 'occupied' } : table,
+    );
+  }
+
+  emitOrdersUpdate();
+  return enrichOrder(order);
+}
+
+export async function updateOrderStatus(orderId, status) {
+  ordersStore = ordersStore.map((order) => (order.id === orderId ? { ...order, status } : order));
+
+  const nextOrder = ordersStore.find((order) => order.id === orderId);
+
+  if (nextOrder?.tableId && status === 'completed') {
+    tablesStore = tablesStore.map((table) =>
+      table.id === nextOrder.tableId ? { ...table, status: 'available' } : table,
+    );
+  }
+
+  emitOrdersUpdate();
+  return enrichOrder(nextOrder);
+}
+
+export async function updateTableStatus(tableId, status) {
+  tablesStore = tablesStore.map((table) => (table.id === tableId ? { ...table, status } : table));
+  emitOrdersUpdate();
+  return tablesStore.find((table) => table.id === tableId);
+}
+
+export async function exportOrders() {
+  const orders = await fetchOrders();
+  return buildCsv(
+    orders.map((order) => ({
+      orderNumber: order.orderNumber,
+      table: order.table?.name || 'Counter',
+      customer: order.customerName,
+      status: order.status,
+      paymentMethod: order.paymentMethod,
+      total: formatCurrency(order.totalAmount),
+    })),
+  );
+}
+
+export function subscribeToOrders(callback) {
+  const handler = () => callback();
+  window.addEventListener('orders:changed', handler);
+  return () => window.removeEventListener('orders:changed', handler);
+}
+
+export function subscribeToTables(callback) {
+  const handler = () => callback();
+  window.addEventListener('tables:changed', handler);
+  return () => window.removeEventListener('tables:changed', handler);
+}import { supabase } from './supabaseClient';
 import { calculateOrderTotals } from '../utils/helpers';
 
 const orderSelect = `
