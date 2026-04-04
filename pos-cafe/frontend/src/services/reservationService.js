@@ -3,21 +3,21 @@ import { supabase } from './supabaseClient';
 // Note: The reservations table may not exist in all deployments.
 // Functions gracefully return empty data if the table is missing.
 
-const reservationSelect = 'id, customer_name, guests, reservation_time, table_id, table:tables(id, name, area)';
+const reservationSelect = 'id, customer_name, guests, reservation_time, table_id, table:tables(id, table_code)';
 
 function mapReservation(record) {
   const reservationDate = new Date(record.reservation_time);
 
   return {
     id: record.id,
-    tableId: record.table?.name ?? '',
+    tableId: record.table?.table_code ?? '',
     tableDbId: record.table?.id ?? record.table_id ?? null,
     name: record.customer_name,
     guests: record.guests,
     date: reservationDate.toISOString().slice(0, 10),
     time: reservationDate.toISOString().slice(11, 16),
     reservationTime: record.reservation_time,
-    floor: record.table?.area ?? null,
+    floor: 'Main',
   };
 }
 

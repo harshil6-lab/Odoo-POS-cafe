@@ -42,7 +42,7 @@ export default function Checkout() {
       const { data: tableRecord, error: tableError } = await supabase
         .from('tables')
         .select('id')
-        .eq('name', selectedTableId)
+        .eq('table_code', selectedTableId)
         .maybeSingle();
 
       if (tableError) throw new Error(tableError.message);

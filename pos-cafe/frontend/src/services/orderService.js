@@ -14,7 +14,7 @@ const orderSelect = `
   service_charge,
   total_amount,
   created_at,
-  table:tables(id, name, area, status),
+  table:tables(id, table_code, status),
   items:order_items(
     id,
     quantity,
@@ -47,7 +47,7 @@ function mapOrder(order) {
     id: order.id,
     orderId: order.id,
     orderNumber: order.order_number,
-    tableId: order.table?.name ?? null,
+    tableId: order.table?.table_code ?? null,
     tableDbId: order.table?.id ?? order.table_id ?? null,
     customer: {
       name: order.customer_name || 'Guest',

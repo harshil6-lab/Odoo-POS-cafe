@@ -4,12 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card'
 import KitchenStatusBadge, { KITCHEN_ORDER_STATUSES } from '../components/KitchenStatusBadge';
 import { supabase } from '../services/supabaseClient';
 
-const ORDER_SELECT = '*, order_items(*, products(name)), tables(name)';
+const ORDER_SELECT = '*, order_items(*, products(name)), tables(table_code)';
 
 function mapOrder(raw) {
   return {
     id: raw.id,
-    tableCode: raw.tables?.name ?? 'N/A',
+    tableCode: raw.tables?.table_code ?? 'N/A',
     customerName: raw.customer_name ?? 'Guest',
     status: String(raw.status || 'pending').toLowerCase(),
     createdAt: raw.created_at,

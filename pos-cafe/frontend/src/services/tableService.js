@@ -1,31 +1,29 @@
 import { supabase } from './supabaseClient';
 
 const TABLE_STATUSES = new Set(['available', 'occupied', 'reserved', 'cleaning']);
-const tableSelect = 'id, name, area, capacity, pos_x, pos_y, shape, status, active';
+const tableSelect = 'id, table_code, seats, status';
 
 function mapTableRecord(record) {
-  const area = record.area ?? 'Main';
-
   return {
-    id: record.name,
+    id: record.table_code,
     dbId: record.id,
-    tableCode: record.name,
-    label: `Table ${record.name}`,
-    floor: area,
-    zone: area,
+    tableCode: record.table_code,
+    label: `Table ${record.table_code}`,
+    floor: 'Main',
+    zone: 'Main',
     status: record.status,
-    seats: record.capacity,
-    capacity: record.capacity,
-    posX: record.pos_x,
-    posY: record.pos_y,
-    shape: record.shape,
-    active: record.active,
-    note: `${record.name} — ${area}, seats ${record.capacity}`,
+    seats: record.seats,
+    capacity: record.seats,
+    posX: null,
+    posY: null,
+    shape: 'square',
+    active: true,
+    note: `${record.table_code} — seats ${record.seats}`,
   };
 }
 
 function resolveTableColumn(tableIdentifier) {
-  return /^[0-9a-f-]{36}$/i.test(String(tableIdentifier)) ? 'id' : 'name';
+  return /^[0-9a-f-]{36}$/i.test(String(tableIdentifier)) ? 'id' : 'table_code';
 }
 
 function normalizeStatus(status) {
@@ -39,7 +37,7 @@ function normalizeStatus(status) {
 }
 
 export async function getAllTables() {
-  const { data, error } = await supabase.from('tables').select(tableSelect).order('name');
+  const { data, error } = await supabase.from('tables').select(tableSelect).order('table_code');
 
   if (error) {
     throw error;
@@ -52,8 +50,7 @@ export async function getTablesByArea(area) {
   const { data, error } = await supabase
     .from('tables')
     .select(tableSelect)
-    .eq('area', area)
-    .order('name');
+    .order('table_code');
 
   if (error) {
     throw error;
@@ -66,7 +63,7 @@ export async function getTableByCode(tableName) {
   const { data, error } = await supabase
     .from('tables')
     .select(tableSelect)
-    .eq('name', tableName)
+    .eq('table_code', tableName)
     .maybeSingle();
 
   if (error) {

@@ -19,7 +19,7 @@ export default function ReservationsAdmin() {
 
   const fetchTables = async () => {
     setLoading(true);
-    const { data } = await supabase.from('tables').select('*').order('name');
+    const { data } = await supabase.from('tables').select('*').order('table_code');
     setTables(data || []);
     setLoading(false);
   };
@@ -51,12 +51,12 @@ export default function ReservationsAdmin() {
         {tables.map((table) => (
           <div key={table.id} className="rounded-xl border border-slate-800 bg-card p-4 shadow-md">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-white">{table.name}</h3>
+              <h3 className="text-lg font-semibold text-white">{table.table_code}</h3>
               <span className={`rounded-full border px-2.5 py-1 text-xs font-medium ${statusColors[table.status] || ''}`}>
                 {table.status}
               </span>
             </div>
-            <p className="mt-1 text-sm text-text-secondary">{table.area || 'No area'} · {table.capacity} seats</p>
+            <p className="mt-1 text-sm text-text-secondary">{table.table_code} · {table.seats} seats</p>
             <div className="mt-3 flex flex-wrap gap-2">
               {['available', 'reserved', 'occupied', 'cleaning'].map((status) => (
                 <Button

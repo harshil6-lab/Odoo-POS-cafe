@@ -21,7 +21,7 @@ export default function CustomerDisplay() {
     const fetchOrder = async () => {
       const { data, error } = await supabase
         .from('orders')
-        .select('*, order_items(*, products(name)), tables(name)')
+        .select('*, order_items(*, products(name)), tables(table_code)')
         .eq('id', orderId)
         .limit(1)
         .maybeSingle();
@@ -29,7 +29,7 @@ export default function CustomerDisplay() {
       if (!error && data) {
         setOrder({
           id: data.order_number || data.id?.slice(0, 8),
-          table: data.tables?.name || 'Unknown',
+          table: data.tables?.table_code || 'Unknown',
           status: data.status,
           items: (data.order_items || []).map((oi) => ({
             name: oi.products?.name || 'Item',
