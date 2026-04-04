@@ -1,18 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
-import KitchenStatusBadge from '../components/KitchenStatusBadge';
 import { useAppState } from '../context/AppStateContext';
 import { confirmPayment } from '../services/orderService';
 import { updateTableStatus } from '../services/tableService';
 import { downloadTicketPDF } from '../utils/generateTicketPDF';
 import { formatCurrency } from '../utils/helpers';
 
-const FILTERS = ['all', 'pending', 'preparing', 'cooking', 'ready'];
-
 export default function Billing() {
   const { liveOrders, refreshOrders } = useAppState();
-  const [filter, setFilter] = useState('all');
   const [selectedOrderId, setSelectedOrderId] = useState(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
@@ -22,15 +18,10 @@ export default function Billing() {
     void refreshOrders();
   }, [refreshOrders]);
 
-  // Show only orders with pending payment (exclude already-paid)
-  const pendingPaymentOrders = useMemo(
-    () => liveOrders.filter((order) => order.paymentStatus !== 'paid'),
-    [liveOrders],
-  );
-
+  // Cashier only sees cash orders with pending payment
   const filteredOrders = useMemo(
-    () => (filter === 'all' ? pendingPaymentOrders : pendingPaymentOrders.filter((order) => order.status === filter)),
-    [filter, pendingPaymentOrders],
+    () => liveOrders.filter((order) => order.paymentStatus === 'pending' && order.paymentMethod === 'cash'),
+    [liveOrders],
   );
 
   useEffect(() => {
@@ -111,24 +102,9 @@ export default function Billing() {
       <div className="grid gap-5 xl:grid-cols-[360px,minmax(0,1fr)]">
         {/* Pending payments */}
         <Card className="glass-card">
-          <CardHeader className="space-y-3 p-5">
-            <CardTitle className="font-display text-lg font-semibold">Pending payments</CardTitle>
-            <div className="flex flex-wrap gap-1.5">
-              {FILTERS.map((status) => (
-                <button
-                  key={status}
-                  type="button"
-                  onClick={() => setFilter(status)}
-                  className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-200 ${
-                    filter === status
-                      ? 'bg-primary text-white shadow-glow-red'
-                      : 'border border-white/[0.06] bg-white/[0.03] text-slate-400 hover:bg-white/[0.06] hover:text-white'
-                  }`}
-                >
-                  {status === 'all' ? 'All' : status[0].toUpperCase() + status.slice(1)}
-                </button>
-              ))}
-            </div>
+          <CardHeader className="p-5">
+            <CardTitle className="font-display text-lg font-semibold">Pending cash payments</CardTitle>
+            <p className="mt-1 text-xs text-slate-500">{filteredOrders.length} order{filteredOrders.length !== 1 ? 's' : ''} awaiting payment</p>
           </CardHeader>
           <CardContent className="space-y-2 p-5 pt-0">
             {filteredOrders.length ? filteredOrders.map((order) => (
@@ -147,7 +123,7 @@ export default function Billing() {
                     <p className="text-sm font-medium text-white">{String(order.id).slice(0, 8)}</p>
                     <p className="mt-1 text-xs text-slate-500">Table {order.tableId} · {order.customer.name}</p>
                   </div>
-                  <KitchenStatusBadge status={order.status} />
+                  <span className="rounded-full border border-yellow-500/20 bg-yellow-500/10 px-2.5 py-0.5 text-[11px] font-medium text-yellow-300">Pending</span>
                 </div>
                 <div className="mt-2 flex items-center justify-between text-xs text-slate-500">
                   <span>{order.items.length} items · {formatCurrency(order.total)}</span>
