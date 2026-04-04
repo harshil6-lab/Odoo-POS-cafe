@@ -16,16 +16,44 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   const fetchUserRole = async (userId) => {
-    const { data, error } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', userId)
-      .limit(1)
-      .maybeSingle();
+    if (!userId) {
+      console.warn('fetchUserRole called without userId');
+      return null;
+    }
 
-    if (error || !data) return null;
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('id, role, email, full_name')
+        .eq('id', userId)
+        .limit(1)
+        .maybeSingle();
 
-    return data.role ?? null;
+      if (error) {
+        console.error('Role fetch error:', error);
+        return null;
+      }
+
+      // If no user profile exists, return null (user may not have staff role yet)
+      if (!data) {
+        console.warn(`No user profile found for ID: ${userId}`);
+        return null;
+      }
+
+      // Validate role is a valid enum value
+      const validRoles = ['admin', 'manager', 'cashier', 'kitchen', 'customer', 'waiter', 'chef'];
+      const normalizedRole = (data.role || '').toLowerCase();
+      
+      if (!validRoles.includes(normalizedRole)) {
+        console.warn(`Invalid role for user ${data.email}: ${data.role}`);
+        return null;
+      }
+
+      return normalizedRole;
+    } catch (err) {
+      console.error('Unexpected error fetching role:', err);
+      return null;
+    }
   };
 
   useEffect(() => {
@@ -116,18 +144,32 @@ export const AuthProvider = ({ children }) => {
 
     if (error) throw new Error(error.message);
 
+    if (!data?.user) {
+      throw new Error('Login failed: No user data returned.');
+    }
+
+    // CRITICAL: Fetch and validate role BEFORE updating context
     const role = await fetchUserRole(data.user.id);
 
     if (!role) {
       await supabase.auth.signOut();
-      throw new Error('Only staff accounts can access this app.');
+      throw new Error('Your account does not have a staff role assigned. Contact your manager.');
     }
 
     setSession(data.session);
     setUser(data.user);
     setRole(role);
 
-    const redirectMap = { manager: '/dashboard', waiter: '/register', cashier: '/billing', chef: '/kitchen' };
+    // Calculate redirect path based on role
+    const redirectMap = {
+      manager: '/dashboard',
+      waiter: '/register',
+      cashier: '/billing',
+      chef: '/kitchen',
+      admin: '/dashboard',
+      kitchen: '/kitchen',  // Handle legacy 'kitchen' role
+    };
+
     return { redirectTo: redirectMap[role] || '/menu' };
   };
 
