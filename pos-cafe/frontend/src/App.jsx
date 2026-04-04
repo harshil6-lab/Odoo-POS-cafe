@@ -12,6 +12,7 @@ import FloorLayout from "./pages/FloorLayout"
 import ContactPage from "./pages/ContactPage"
 import Login from "./pages/Login"
 import Signup from "./pages/Signup"
+import Cart from "./pages/Cart"
 import Checkout from "./pages/Checkout"
 import OrderSuccess from "./pages/OrderSuccess"
 import OrderStatus from "./pages/OrderStatus"
@@ -46,6 +47,7 @@ function App() {
       <Route element={<LandingLayout />}>
         <Route path="/" element={<Landing />} />
         <Route path="/menu" element={<Menu />} />
+        <Route path="/cart" element={<Cart />} />
         <Route path="/checkout" element={<Checkout />} />
         <Route path="/order-success/:orderId" element={<OrderSuccess />} />
         <Route path="/order-status/:orderId" element={<OrderStatus />} />
@@ -62,6 +64,7 @@ function App() {
       <Route path="/signup" element={<Signup />} />
 
       <Route path="/admin/customer-display" element={<CustomerDisplay />} />
+      <Route path="/admin/customer-display/:orderId" element={<CustomerDisplay />} />
 
       <Route path="/customer-ordering" element={<Navigate to="/menu" replace />} />
 

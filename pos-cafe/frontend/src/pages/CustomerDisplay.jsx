@@ -1,26 +1,91 @@
 import { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { CheckCircle2, CookingPot, Sparkles } from 'lucide-react';
 import { formatCurrency } from '../utils/helpers';
-
-const ORDER = {
-  id: '4051',
-  table: 'Table 05',
-  items: [
-    { name: 'Signature Cappuccino', quantity: 2, price: 220 },
-    { name: 'Butter Croissant', quantity: 1, price: 140 },
-  ],
-  subtotal: 580,
-  tax: 46.4,
-  total: 626.4,
-};
+import { supabase } from '../services/supabaseClient';
 
 export default function CustomerDisplay() {
-  const [stage, setStage] = useState('preparing');
+  const { orderId } = useParams();
+  const [order, setOrder] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  // Derive stage from order status
+  const stage = (!order || ['pending', 'preparing', 'cooking'].includes(order.status)) ? 'preparing' : 'ready';
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setStage('ready'), 3500);
-    return () => window.clearTimeout(timer);
-  }, []);
+    if (!orderId) {
+      setLoading(false);
+      return;
+    }
+
+    const fetchOrder = async () => {
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*, order_items(*, products(name)), tables(name)')
+        .eq('id', orderId)
+        .limit(1)
+        .maybeSingle();
+
+      if (!error && data) {
+        setOrder({
+          id: data.order_number || data.id?.slice(0, 8),
+          table: data.tables?.name || 'Unknown',
+          status: data.status,
+          items: (data.order_items || []).map((oi) => ({
+            name: oi.products?.name || 'Item',
+            quantity: Number(oi.quantity),
+            price: Number(oi.unit_price),
+          })),
+          subtotal: Number(data.subtotal || 0),
+          tax: Number(data.tax_amount || 0),
+          total: Number(data.total_amount || 0),
+        });
+      }
+      setLoading(false);
+    };
+
+    fetchOrder();
+
+    // Realtime subscription for order updates
+    const channel = supabase
+      .channel(`customer-display-${orderId}`)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders', filter: `id=eq.${orderId}` }, (payload) => {
+        if (payload.new) {
+          setOrder((prev) => prev ? { ...prev, status: payload.new.status } : prev);
+        }
+      })
+      .subscribe();
+
+    // Also poll every 5 seconds as fallback
+    const interval = setInterval(fetchOrder, 5000);
+
+    return () => {
+      supabase.removeChannel(channel);
+      clearInterval(interval);
+    };
+  }, [orderId]);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-950 text-white">
+        <p className="text-lg text-slate-400">Loading order display...</p>
+      </div>
+    );
+  }
+
+  if (!order) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-950 text-white">
+        <div className="text-center">
+          <h1 className="text-3xl font-semibold">Customer Display</h1>
+          <p className="mt-4 text-lg text-slate-400">No order ID provided. Append an order ID to the URL.</p>
+          <p className="mt-2 text-sm text-slate-500">Example: /admin/customer-display/order-id-here</p>
+        </div>
+      </div>
+    );
+  }
+
+  const ORDER = order;
 
   return (
     <div className="grid min-h-screen bg-slate-950 text-white lg:grid-cols-[1.2fr,0.8fr]">
@@ -93,8 +158,8 @@ export default function CustomerDisplay() {
           <div className="flex items-start gap-4">
             <Sparkles className="mt-1 h-6 w-6 text-teal-300" />
             <div>
-              <p className="font-display text-3xl font-semibold text-white">{stage === 'ready' ? 'Ready animation live' : 'Preparing animation live'}</p>
-              <p className="mt-3 text-base leading-8 text-slate-400">This layout is structured for Supabase realtime updates later, so kitchen status can drive guest-facing motion and payment confirmation states without redesigning the screen.</p>
+              <p className="font-display text-3xl font-semibold text-white">{stage === 'ready' ? 'Order ready' : 'Preparing your order'}</p>
+              <p className="mt-3 text-base leading-8 text-slate-400">This display updates in realtime as your order progresses through the kitchen. Status changes are reflected automatically.</p>
             </div>
           </div>
         </div>
