@@ -10,7 +10,8 @@ export default function Navbar({ isDashboard = false }) {
   const { isAuthenticated, user, role, roleBadge, redirectPath, logout } = useAuth();
   const { lastPlacedOrder } = useAppState();
   const navLinks = isDashboard ? getNavLinksForRole(role) : PUBLIC_NAV_LINKS;
-  const trackingPath = lastPlacedOrder?.id ? `/track-order?orderId=${lastPlacedOrder.id}` : '/track-order';
+  const lastTrackedOrderId = (typeof window !== 'undefined' ? window.sessionStorage.getItem('last_order_id') : null) || lastPlacedOrder?.id || null;
+  const trackingPath = lastTrackedOrderId ? `/order-status/${lastTrackedOrderId}` : '/track-order';
 
   const baseHeaderClasses = "sticky top-0 z-50 border-b backdrop-blur-xl";
   const publicHeaderClasses = `${baseHeaderClasses} bg-background/80 border-slate-800`;

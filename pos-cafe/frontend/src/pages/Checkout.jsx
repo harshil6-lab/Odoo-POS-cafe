@@ -16,7 +16,7 @@ const paymentMethods = [
 
 export default function Checkout() {
   const navigate = useNavigate();
-  const { cartItems, customerDetails, setCustomerDetails, selectedTableId, totals, placeOrder } = useAppState();
+  const { cartItems, clearCart, customerDetails, setCustomerDetails, selectedTableId, totals, placeOrder } = useAppState();
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [customerEmail, setCustomerEmail] = useState('');
   const [showUpiModal, setShowUpiModal] = useState(false);
@@ -30,17 +30,18 @@ export default function Checkout() {
     if (sessionStorage.getItem('table_code') && !customerDetails.name) {
       setCustomerDetails({ name: 'Guest' });
     }
-  }, []);
+  }, [customerDetails.name, setCustomerDetails]);
 
   const submitOrder = async () => {
     setSubmitting(true);
 
     try {
       const order = await placeOrder({ paymentMethod: paymentLabel, releaseTable: true, customerEmail });
+      const finalCustomerName = customerDetails.name?.trim() || 'Guest';
       const completedOrder = {
         ...order,
         customer: {
-          name: customerDetails.name,
+          name: finalCustomerName,
           phone: customerDetails.phone,
         },
         customerEmail,
@@ -59,8 +60,13 @@ export default function Checkout() {
       // Send receipt email (non-blocking)
       sendOrderEmail(completedOrder, customerEmail).catch(() => {});
 
+      sessionStorage.setItem('last_order_id', order.id);
+      clearCart();
       setError('');
-      navigate('/thank-you', { replace: true, state: { order: completedOrder } });
+      navigate(`/order-success/${order.id}`, {
+        replace: true,
+        state: { order: completedOrder, showToast: true },
+      });
     } catch (err) {
       setError(err.message || 'Unable to place the order.');
     } finally {

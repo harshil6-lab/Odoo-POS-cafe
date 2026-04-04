@@ -13,6 +13,8 @@ import ContactPage from "./pages/ContactPage"
 import Login from "./pages/Login"
 import Signup from "./pages/Signup"
 import Checkout from "./pages/Checkout"
+import OrderSuccess from "./pages/OrderSuccess"
+import OrderStatus from "./pages/OrderStatus"
 import TableEntry from "./pages/TableEntry"
 import ThankYou from "./pages/ThankYou"
 import TrackOrder from "./pages/TrackOrder"
@@ -38,6 +40,8 @@ function App() {
         <Route path="/" element={<Landing />} />
         <Route path="/menu" element={<Menu />} />
         <Route path="/checkout" element={<Checkout />} />
+        <Route path="/order-success/:orderId" element={<OrderSuccess />} />
+        <Route path="/order-status/:orderId" element={<OrderStatus />} />
         <Route path="/thank-you" element={<ThankYou />} />
         <Route path="/track-order" element={<TrackOrder />} />
         <Route path="/reserve-table" element={<ReserveTable />} />
