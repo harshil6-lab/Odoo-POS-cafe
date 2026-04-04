@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { useAppState } from '../context/AppStateContext';
@@ -8,6 +9,8 @@ import { downloadTicketPDF } from '../utils/generateTicketPDF';
 import { formatCurrency } from '../utils/helpers';
 
 export default function Billing() {
+  const { tableId: routeTableId } = useParams();
+  const navigate = useNavigate();
   const { liveOrders, refreshOrders } = useAppState();
   const [selectedOrderId, setSelectedOrderId] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -19,9 +22,16 @@ export default function Billing() {
   }, [refreshOrders]);
 
   // Cashier only sees cash orders with pending payment
+  // If accessed via /billing/:tableId, further filter to that table
   const filteredOrders = useMemo(
-    () => liveOrders.filter((order) => order.paymentStatus === 'pending' && order.paymentMethod === 'cash'),
-    [liveOrders],
+    () => {
+      let orders = liveOrders.filter((order) => order.paymentStatus === 'pending' && order.paymentMethod === 'cash');
+      if (routeTableId) {
+        orders = orders.filter((order) => order.tableDbId === routeTableId);
+      }
+      return orders;
+    },
+    [liveOrders, routeTableId],
   );
 
   useEffect(() => {
@@ -74,6 +84,11 @@ export default function Billing() {
       handleDownload(updatedOrder);
       setMessage(`Payment confirmed for order ${String(updatedOrder.id).slice(0, 8)}. Invoice downloaded and table released.`);
       await refreshOrders();
+
+      // If accessed from tables page, redirect back
+      if (routeTableId) {
+        navigate('/tables');
+      }
     } catch (err) {
       setError(err.message || 'Unable to confirm the payment.');
     } finally {

@@ -73,6 +73,7 @@ function App() {
           <Route path="/dashboard" element={<ManagerRoute><Dashboard /></ManagerRoute>} />
           <Route path="/register" element={<WaiterRoute><Register /></WaiterRoute>} />
           <Route path="/billing" element={<CashierRoute><Billing /></CashierRoute>} />
+          <Route path="/billing/:tableId" element={<CashierRoute><Billing /></CashierRoute>} />
           <Route path="/kitchen" element={<ChefRoute><Kitchen /></ChefRoute>} />
           <Route path="/tables" element={<ProtectedRoute allowedRoles={['manager', 'waiter', 'cashier']}><Tables /></ProtectedRoute>} />
           <Route path="/orders" element={<ManagerRoute><Orders /></ManagerRoute>} />

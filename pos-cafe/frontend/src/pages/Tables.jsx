@@ -4,6 +4,7 @@ import TableScene from '../components/TableScene';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { useAppState } from '../context/AppStateContext';
+import { useAuth } from '../context/AuthContext';
 import { getTableStatusTone } from '../utils/helpers';
 
 function matchesFloor(table, floor) {
@@ -19,6 +20,7 @@ function matchesFloor(table, floor) {
 export default function Tables() {
   const navigate = useNavigate();
   const { tables } = useAppState();
+  const { role } = useAuth();
   const [activeFloor, setActiveFloor] = useState('Ground Floor');
 
   const floorTables = useMemo(() => tables.filter((table) => matchesFloor(table, activeFloor)), [activeFloor, tables]);
@@ -104,9 +106,15 @@ export default function Tables() {
                 <Button
                   size="sm"
                   className="mt-3 w-full"
-                  onClick={() => navigate(`/register?table=${table.id}`)}
+                  onClick={() => {
+                    if (role === 'cashier') {
+                      navigate(`/billing/${table.dbId || table.id}`);
+                    } else {
+                      navigate(`/register?table=${table.id}`);
+                    }
+                  }}
                 >
-                  Open register
+                  {role === 'cashier' ? 'View bill' : 'Open register'}
                 </Button>
               </div>
             )) : (
