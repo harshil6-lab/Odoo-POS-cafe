@@ -107,14 +107,17 @@ export default function Tables() {
                   size="sm"
                   className="mt-3 w-full"
                   onClick={() => {
+                    const id = table.dbId || table.id;
                     if (role === 'cashier') {
-                      navigate(`/billing/${table.dbId || table.id}`);
+                      navigate(`/billing/${id}`);
+                    } else if (role === 'manager') {
+                      navigate(`/tables/${id}`);
                     } else {
-                      navigate(`/register?table=${table.id}`);
+                      navigate(`/register/${id}`);
                     }
                   }}
                 >
-                  {role === 'cashier' ? 'View bill' : 'Open register'}
+                  {role === 'cashier' ? 'View bill' : role === 'manager' ? 'View details' : 'Open register'}
                 </Button>
               </div>
             )) : (

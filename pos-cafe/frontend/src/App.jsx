@@ -32,6 +32,7 @@ import Tables from "./pages/Tables"
 import CustomerDisplay from "./pages/CustomerDisplay"
 import StaffManagement from "./pages/StaffManagement"
 import MenuEditor from "./pages/MenuEditor"
+import TableDetail from "./pages/TableDetail"
 import CashierRoute from "./components/CashierRoute"
 import ChefRoute from "./components/ChefRoute"
 import ManagerRoute from "./components/ManagerRoute"
@@ -72,10 +73,12 @@ function App() {
         <Route element={<DashboardLayout />}>
           <Route path="/dashboard" element={<ManagerRoute><Dashboard /></ManagerRoute>} />
           <Route path="/register" element={<WaiterRoute><Register /></WaiterRoute>} />
+          <Route path="/register/:tableId" element={<WaiterRoute><Register /></WaiterRoute>} />
           <Route path="/billing" element={<CashierRoute><Billing /></CashierRoute>} />
           <Route path="/billing/:tableId" element={<CashierRoute><Billing /></CashierRoute>} />
           <Route path="/kitchen" element={<ChefRoute><Kitchen /></ChefRoute>} />
           <Route path="/tables" element={<ProtectedRoute allowedRoles={['manager', 'waiter', 'cashier']}><Tables /></ProtectedRoute>} />
+          <Route path="/tables/:tableId" element={<ManagerRoute><TableDetail /></ManagerRoute>} />
           <Route path="/orders" element={<ManagerRoute><Orders /></ManagerRoute>} />
           <Route path="/reports" element={<ManagerRoute><Reports /></ManagerRoute>} />
           <Route path="/staff" element={<ManagerRoute><StaffManagement /></ManagerRoute>} />

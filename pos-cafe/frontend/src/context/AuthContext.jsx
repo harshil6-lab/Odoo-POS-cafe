@@ -89,7 +89,7 @@ export const AuthProvider = ({ children }) => {
 
         if (role === 'manager') navigate('/dashboard');
         else if (role === 'waiter') navigate('/tables');
-        else if (role === 'cashier') navigate('/billing');
+        else if (role === 'cashier') navigate('/tables');
         else if (role === 'chef') navigate('/kitchen');
         else navigate('/menu');
       } catch (err) {
@@ -171,10 +171,10 @@ export const AuthProvider = ({ children }) => {
     const redirectMap = {
       manager: '/dashboard',
       waiter: '/tables',
-      cashier: '/billing',
+      cashier: '/tables',
       chef: '/kitchen',
       admin: '/dashboard',
-      kitchen: '/kitchen',  // Handle legacy 'kitchen' role
+      kitchen: '/kitchen',
     };
 
     return { redirectTo: redirectMap[role] || '/menu' };
