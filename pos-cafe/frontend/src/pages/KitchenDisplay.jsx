@@ -5,9 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card'
 import { kitchenOrders } from '../data/restaurantData';
 
 const columns = [
-  { id: 'pending', title: 'Pending', tone: 'border-rose-500/20 bg-rose-500/10 text-rose-300' },
-  { id: 'preparing', title: 'Preparing', tone: 'border-amber-500/20 bg-amber-500/10 text-amber-300' },
-  { id: 'ready', title: 'Ready', tone: 'border-teal-500/20 bg-teal-500/10 text-teal-300' },
+  { id: 'pending', title: 'Pending', tone: 'border-yellow-500/20 bg-yellow-500/10 text-yellow-300' },
+  { id: 'preparing', title: 'Preparing', tone: 'border-blue-500/20 bg-blue-500/10 text-blue-300' },
+  { id: 'ready', title: 'Ready', tone: 'border-green-500/20 bg-green-500/10 text-green-300' },
 ];
 
 export default function KitchenDisplay() {
@@ -30,13 +30,13 @@ export default function KitchenDisplay() {
   return (
     <div className="space-y-4">
       <div>
-        <p className="text-xs uppercase tracking-wide text-slate-400">Kitchen</p>
-        <h1 className="mt-1 text-xl font-semibold text-slate-100">Chef display</h1>
+        <p className="text-xs uppercase tracking-wide text-text-secondary">Kitchen</p>
+        <h1 className="mt-1 text-xl font-semibold text-white">Chef display</h1>
       </div>
 
       <div className="grid gap-4 xl:grid-cols-3">
         {columns.map((column, index) => (
-          <Card key={column.id} className="rounded-xl border-slate-800 bg-[#0F172A] shadow-md">
+          <Card key={column.id} className="rounded-xl border-slate-800 bg-card shadow-md">
             <CardHeader className="p-4">
               <div className={`flex items-center justify-between rounded-lg border px-3 py-3 ${column.tone}`}>
                 <div className="flex items-center gap-2">
@@ -48,13 +48,13 @@ export default function KitchenDisplay() {
             </CardHeader>
             <CardContent className="space-y-3 p-4 pt-0">
               {orders.filter((order) => order.status === column.id).map((order) => (
-                <div key={order.id} className="rounded-lg border border-slate-800 bg-[#111827] p-3">
+                <div key={order.id} className="rounded-xl border border-slate-800 bg-background p-3 shadow-sm">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-base font-semibold text-slate-100">{order.id}</p>
-                      <p className="mt-1 text-xs text-slate-400">{order.table} · {order.time}</p>
+                      <p className="text-base font-semibold text-white">{order.id}</p>
+                      <p className="mt-1 text-xs text-text-secondary">{order.table} · {order.time}</p>
                     </div>
-                    <span className="rounded-md border border-slate-800 px-2 py-1 text-xs text-slate-400">{column.title}</span>
+                    <span className="rounded-md border border-slate-800 px-2 py-1 text-xs text-text-secondary">{column.title}</span>
                   </div>
                   <div className="mt-3 space-y-1 text-sm text-slate-300">
                     {order.items.map((item) => (

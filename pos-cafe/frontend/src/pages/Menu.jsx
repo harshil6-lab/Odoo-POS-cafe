@@ -65,24 +65,24 @@ export default function Menu() {
   };
 
   return (
-    <div className="bg-[#0B1220] py-10">
+    <div className="bg-background py-10">
       <div className="mx-auto grid max-w-7xl gap-6 px-6 xl:grid-cols-[minmax(0,1fr),380px]">
         <div className="space-y-6">
-          <section className="rounded-xl border border-[#374151] bg-[#111827] p-4 shadow-sm">
+          <section className="rounded-xl border border-slate-800 bg-card p-4 shadow-md">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
               <div>
-                <h1 className="text-2xl font-semibold text-[#F9FAFB]">Cafe menu</h1>
-                <p className="mt-3 text-sm text-[#9CA3AF]">
+                <h1 className="text-2xl font-semibold text-white">Cafe menu</h1>
+                <p className="mt-3 text-sm text-text-secondary">
                   Live menu items are loaded from Supabase. Add items, include preferences, and finish checkout from your table.
                 </p>
               </div>
               <div className="flex flex-wrap gap-3">
-                <div className="rounded-full border border-[#374151] bg-[#0B1220] px-4 py-2 text-sm text-[#F9FAFB]">
+                <div className="rounded-full border border-slate-800 bg-background px-4 py-2 text-sm text-white">
                   {selectedTableId ? `Ordering for Table ${selectedTableId}` : 'Please select your table first'}
                 </div>
                 <Button
                   variant="outline"
-                  className="h-11 rounded-xl border-[#374151] bg-[#1F2937] px-5 text-sm text-[#F9FAFB] hover:bg-[#111827]"
+                  className="h-11 rounded-xl border-slate-800 bg-slate-800 px-5 text-sm text-white hover:bg-card"
                   onClick={() => setShowTablePicker(true)}
                 >
                   Choose table
@@ -92,7 +92,7 @@ export default function Menu() {
 
             <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr),auto]">
               <div className="relative">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9CA3AF]" />
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-secondary" />
                 <Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search menu items" className="pl-10" />
               </div>
 

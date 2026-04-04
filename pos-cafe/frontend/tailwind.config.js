@@ -11,23 +11,19 @@ export default {
         accent: ['Sora Variable', 'Inter Variable', ...defaultTheme.fontFamily.sans],
       },
       colors: {
+        primary: '#EF4F5F',
+        background: '#0B0F1A',
+        card: '#111827',
+        'text-secondary': '#9CA3AF',
+        accent: '#FACC15',
         slate: {
+          800: '#1e293b',
           900: '#0f172a',
           950: '#020617',
-        },
-        amber: {
-          500: '#f59e0b',
         },
         teal: {
           400: '#2dd4bf',
         },
-        // Semantic mapping
-        background: '#020617', // slate-950
-        card: '#0f172a', // slate-900
-        accent: '#f59e0b', // amber-500
-        secondaryAccent: '#2dd4bf', // teal-400
-        textPrimary: '#ffffff', // white
-        textMuted: '#94a3b8', // slate-400
       },
       boxShadow: {
         'premium': '0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.3)',

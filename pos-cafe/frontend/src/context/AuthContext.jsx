@@ -18,18 +18,13 @@ export const AuthProvider = ({ children }) => {
   const fetchUserRole = async (userId) => {
     const { data, error } = await supabase
       .from('users')
-      .select(`
-        role_id,
-        roles (
-          name
-        )
-      `)
+      .select('role')
       .eq('id', userId)
       .single();
 
     if (error || !data) return null;
 
-    return data.roles?.name ?? null;
+    return data.role ?? null;
   };
 
   useEffect(() => {

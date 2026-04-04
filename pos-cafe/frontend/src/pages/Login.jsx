@@ -15,22 +15,16 @@ function Login() {
 
   useEffect(() => {
     const checkSession = async () => {
-      // QR customers should not see the staff login page
-      if (sessionStorage.getItem('table_code')) {
-        navigate('/menu');
+      if (sessionStorage.getItem("table_code"))
         return;
-      }
 
-      const { data } = await supabase.auth.getSession();
-      if (!data.session) return;
+      const {
+        data: { session },
+        error
+      } = await supabase.auth.getSession();
 
-      const role = await fetchUserRole(data.session.user.id);
-      if (!role) return;
-
-      if (role === 'manager') navigate('/dashboard');
-      else if (role === 'waiter') navigate('/register');
-      else if (role === 'cashier') navigate('/billing');
-      else if (role === 'chef') navigate('/kitchen');
+      if (error || !session)
+        return;
     };
 
     checkSession();

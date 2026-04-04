@@ -14,10 +14,12 @@ export const APP_NAV_LINKS = [
   { label: 'Orders', to: '/orders' },
   { label: 'Reports', to: '/reports' },
   { label: 'Staff', to: '/staff' },
+  { label: 'Menu Editor', to: '/menu-editor' },
+  { label: 'Reservations', to: '/reservations' },
 ];
 
 export const rolePermissions = {
-  manager: ['dashboard', 'tables', 'register', 'billing', 'kitchen', 'orders', 'reports', 'staff'],
+  manager: ['dashboard', 'tables', 'register', 'billing', 'kitchen', 'orders', 'reports', 'staff', 'menu-editor', 'reservations'],
   waiter: ['tables', 'register', 'billing'],
   cashier: ['tables', 'billing'],
   chef: ['kitchen'],
@@ -32,6 +34,8 @@ const routeToPermission = {
   '/orders': 'orders',
   '/reports': 'reports',
   '/staff': 'staff',
+  '/menu-editor': 'menu-editor',
+  '/reservations': 'reservations',
 };
 
 export function getNavLinksForRole(role) {

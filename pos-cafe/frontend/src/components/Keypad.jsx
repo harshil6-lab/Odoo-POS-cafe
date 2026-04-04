@@ -6,11 +6,11 @@ const MODES = ['Qty', 'Discount %', 'Price override', 'Delete'];
 
 function Keypad({ activeMode, onModeChange }) {
   return (
-    <Card className="flex h-full flex-col rounded-[28px] border-white/10 bg-[#111827]">
-      <CardHeader className="gap-1 border-b border-white/10 p-5">
+    <Card className="flex h-full flex-col rounded-xl border-slate-800 bg-card">
+      <CardHeader className="gap-1 border-b border-slate-800 p-5">
         <div>
-          <p className="text-sm font-medium text-slate-400">Keypad</p>
-          <CardTitle className="mt-1 text-2xl font-semibold text-slate-100">Numeric keypad</CardTitle>
+          <p className="text-sm font-medium text-text-secondary">Keypad</p>
+          <CardTitle className="mt-1 text-2xl font-semibold text-white">Numeric keypad</CardTitle>
         </div>
       </CardHeader>
 
@@ -20,7 +20,7 @@ function Keypad({ activeMode, onModeChange }) {
             <button
               key={key}
               type="button"
-              className="h-14 rounded-2xl border border-white/10 bg-[#0B1220] text-base font-semibold text-slate-100 transition hover:border-teal-400/30 hover:bg-slate-900"
+              className="h-14 rounded-xl border border-slate-800 bg-background text-base font-semibold text-white transition hover:border-primary/30 hover:bg-slate-900"
             >
               {key}
             </button>
@@ -33,7 +33,7 @@ function Keypad({ activeMode, onModeChange }) {
               key={mode}
               type="button"
               variant={mode === 'Delete' ? 'destructive' : activeMode === mode ? 'secondary' : 'outline'}
-              className="h-14 rounded-2xl px-3 text-sm"
+              className="h-14 rounded-xl px-3 text-sm"
               onClick={() => onModeChange(mode)}
             >
               {mode}

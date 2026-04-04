@@ -1,68 +1,80 @@
-import { Coffee } from 'lucide-react';
+import { Coffee, Globe, MessageCircle, Send } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useAppState } from '../context/AppStateContext';
 
-const footerLinks = [
-  { label: 'Menu', to: '/menu' },
-  { label: 'Reserve table', to: '/reserve-table' },
-  { label: 'Floor layout', to: '/floor-layout' },
-  { label: 'Contact', to: '/contact' },
-];
+const footerSections = {
+  company: [
+    { label: 'About Us', to: '/about' },
+    { label: 'Contact', to: '/contact' },
+    { label: 'Careers', to: '#' },
+  ],
+  product: [
+    { label: 'Menu', to: '/menu' },
+    { label: 'Book a Table', to: '/book-table' },
+    { label: 'Track Order', to: '/track-order' },
+  ],
+  features: [
+    { label: 'QR Ordering', to: '#' },
+    { label: 'Live Kitchen', to: '#' },
+    { label: 'Smart Billing', to: '#' },
+  ],
+  support: [
+    { label: 'Help Center', to: '#' },
+    { label: 'Terms of Service', to: '#' },
+    { label: 'Privacy Policy', to: '#' },
+  ],
+};
+
+const FooterLink = ({ to, children }) => (
+  <Link to={to} className="text-text-secondary transition hover:text-white">
+    {children}
+  </Link>
+);
 
 export default function Footer() {
-  const { tables, catalogItems, reservations } = useAppState();
-
   return (
-    <footer className="border-t border-[#374151] bg-[#111827] text-slate-400">
-      <div className="mx-auto grid max-w-7xl gap-6 px-6 py-10 md:grid-cols-2 xl:grid-cols-4">
-        <div>
-          <div className="flex items-center gap-3 text-[#F59E0B]">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#374151] bg-[#111827]">
-              <Coffee className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-base font-semibold text-[#F9FAFB]">Cafe POS Suite</p>
-              <p className="text-sm text-[#9CA3AF]">Restaurant operating system</p>
-            </div>
-          </div>
-          <p className="mt-4 max-w-sm text-sm text-[#9CA3AF]">
-            Premium QR ordering, live kitchen progress, and fast billing for restaurant teams.
-          </p>
-        </div>
-
-        <div>
-          <h3 className="text-xl font-medium text-[#F9FAFB]">Quick links</h3>
-          <div className="mt-4 grid gap-3">
-            {footerLinks.map((link) => (
-              <Link key={link.label} to={link.to} className="text-sm text-[#9CA3AF] transition hover:text-[#F9FAFB]">
-                {link.label}
-              </Link>
-            ))}
-            <Link to="/track-order" className="text-sm text-[#9CA3AF] transition hover:text-[#F9FAFB]">Track order</Link>
-          </div>
-        </div>
-
-        <div>
-          <h3 className="text-xl font-medium text-[#F9FAFB]">Contact info</h3>
-          <div className="mt-4 grid gap-3 text-sm text-[#9CA3AF]">
-            <p>support@cafepossuite.com</p>
-            <p>+91 98765 43210</p>
-            <p>Ground floor service desk</p>
-          </div>
-        </div>
-
-        <div>
-          <h3 className="text-xl font-medium text-[#F9FAFB]">Opening hours</h3>
-          <div className="mt-4 grid gap-3 text-sm text-[#9CA3AF]">
-            <p>Mon to Fri: 8:00 AM to 10:00 PM</p>
-            <p>Sat to Sun: 9:00 AM to 11:00 PM</p>
-            <p>{tables.length} tables, {catalogItems.length} items, {reservations.length} reservations</p>
-            <div className="flex gap-3 pt-1">
-              <a href="https://instagram.com" className="transition hover:text-[#F9FAFB]">Instagram</a>
-              <a href="https://facebook.com" className="transition hover:text-[#F9FAFB]">Facebook</a>
-              <a href="https://x.com" className="transition hover:text-[#F9FAFB]">X</a>
+    <footer className="bg-black text-white">
+      <div className="mx-auto max-w-7xl px-6 py-16">
+        <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-5">
+          <div className="lg:col-span-2">
+            <Link to="/" className="flex items-center gap-3 text-primary">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-card">
+                <Coffee className="h-5 w-5" />
+              </div>
+              <span className="text-xl font-bold">POS Cafe</span>
+            </Link>
+            <p className="mt-4 max-w-sm text-text-secondary">
+              The future of dining is here. A premium restaurant experience for guests and staff.
+            </p>
+            <div className="mt-6 flex gap-4">
+              <a href="#" className="text-text-secondary hover:text-white"><Globe size={20} /></a>
+              <a href="#" className="text-text-secondary hover:text-white"><MessageCircle size={20} /></a>
+              <a href="#" className="text-text-secondary hover:text-white"><Send size={20} /></a>
             </div>
           </div>
+          
+          <div>
+            <h3 className="font-semibold">Company</h3>
+            <ul className="mt-4 space-y-3">
+              {footerSections.company.map(link => <li key={link.label}><FooterLink to={link.to}>{link.label}</FooterLink></li>)}
+            </ul>
+          </div>
+
+          <div>
+            <h3 className="font-semibold">Product</h3>
+            <ul className="mt-4 space-y-3">
+              {footerSections.product.map(link => <li key={link.label}><FooterLink to={link.to}>{link.label}</FooterLink></li>)}
+            </ul>
+          </div>
+
+          <div>
+            <h3 className="font-semibold">Features</h3>
+            <ul className="mt-4 space-y-3">
+              {footerSections.features.map(link => <li key={link.label}><FooterLink to={link.to}>{link.label}</FooterLink></li>)}
+            </ul>
+          </div>
+        </div>
+        <div className="mt-16 border-t border-slate-800 pt-8 text-center text-sm text-text-secondary">
+          &copy; {new Date().getFullYear()} POS Cafe. All rights reserved.
         </div>
       </div>
     </footer>

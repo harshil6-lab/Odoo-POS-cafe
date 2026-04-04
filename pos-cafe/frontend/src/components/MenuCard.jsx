@@ -1,65 +1,48 @@
 import { Button } from './ui/Button';
 import { formatCurrency } from '../utils/helpers';
+import VegNonVegIcon from './ui/VegNonVegIcon';
+import { Plus } from 'lucide-react';
 
-function getMenuBadges(item) {
-  const name = String(item.name || '').toLowerCase();
+function isVeg(item) {
   const category = String(item.category || '').toLowerCase();
-  const badges = [];
-
-  if (['tea', 'coffee', 'desserts', 'water'].includes(category)) {
-    badges.push('Veg');
-  }
-
-  if (['tea', 'coffee', 'pizza', 'pasta'].includes(category) || name.includes('hot')) {
-    badges.push('Hot');
-  }
-
-  if (['pizza', 'burger', 'coffee'].includes(category) || Number(item.price) >= 180) {
-    badges.push('Popular');
-  }
-
-  return badges.slice(0, 3);
+  return ['tea', 'coffee', 'desserts', 'water', 'veg starters', 'main course (veg)'].includes(category);
 }
 
 function MenuCard({ item, onAdd, actionLabel = 'Add', compact = false }) {
   const isAvailable = item.isAvailable !== false;
-  const badges = getMenuBadges(item);
+  const veg = isVeg(item);
 
   return (
-    <article className="group overflow-hidden rounded-xl border border-[#374151] bg-[#111827] shadow-lg transition duration-200 hover:-translate-y-1 hover:scale-[1.01] hover:shadow-xl">
-      <div className={`${compact ? 'aspect-[4/3]' : 'aspect-[5/4]'} relative overflow-hidden bg-[#0B1220]`}>
-        <img src={item.imageUrl} alt={item.name} className="h-full w-full object-cover transition duration-300 group-hover:scale-105" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0B1220] via-[#0B1220]/25 to-transparent" />
-        <div className="absolute left-4 top-4 flex flex-wrap gap-2">
-          {badges.map((badge) => (
-            <span key={badge} className="rounded-full border border-white/10 bg-[#111827]/90 px-3 py-1 text-sm text-[#F9FAFB]">
-              {badge}
-            </span>
-          ))}
+    <article className="group overflow-hidden rounded-xl bg-card shadow-lg transition-transform duration-300 hover:scale-105 hover:shadow-2xl">
+      <div className={`${compact ? 'aspect-[4/3]' : 'aspect-square'} relative`}>
+        <img src={item.imageUrl} alt={item.name} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
+        <div className="absolute bottom-4 left-4">
+          <h3 className="text-lg font-bold text-white">{item.name}</h3>
+          <p className="text-sm text-text-secondary">{item.category}</p>
+        </div>
+        <div className="absolute right-4 top-4">
+          <VegNonVegIcon isVeg={veg} />
+        </div>
+        <div className="absolute bottom-4 right-4 rounded-full bg-primary px-3 py-1 text-sm font-bold text-white">
+          {formatCurrency(item.price)}
         </div>
       </div>
 
-      <div className="space-y-4 p-4">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h3 className="text-base font-semibold text-[#F9FAFB]">{item.name}</h3>
-            <p className="mt-2 text-sm text-[#9CA3AF]">{formatCurrency(item.price)}</p>
-          </div>
-          <span className="rounded-full border border-[#374151] bg-[#0B1220] px-3 py-1 text-sm text-[#9CA3AF]">
-            {item.category}
-          </span>
-        </div>
-
-        <div className="flex items-center justify-between gap-3">
-          <p className={`text-sm ${isAvailable ? 'text-emerald-300' : 'text-rose-300'}`}>
-            {isAvailable ? 'Available now' : 'Currently unavailable'}
+      <div className="p-4">
+        <p className="text-sm text-text-secondary mb-4">{item.description || 'A delicious item from our menu.'}</p>
+        <div className="flex items-center justify-between">
+          <p className={`text-sm font-bold ${isAvailable ? 'text-green-400' : 'text-red-400'}`}>
+            {isAvailable ? 'Available' : 'Unavailable'}
           </p>
           <Button
             type="button"
-            className="h-10 rounded-lg bg-[#F59E0B] px-4 text-sm text-black hover:brightness-110"
+            size="sm"
+            className="bg-primary text-white hover:bg-primary/90"
             disabled={!isAvailable}
             onClick={() => onAdd?.(item)}
           >
+            <Plus className="mr-2 h-4 w-4" />
             {actionLabel}
           </Button>
         </div>
