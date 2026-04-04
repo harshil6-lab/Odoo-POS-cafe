@@ -70,7 +70,7 @@ function Signup() {
 
     // Upsert profile so role is stored immediately
     console.log('FINAL ROLE SENT:', selectedRole);
-    await supabase.from('users').upsert({
+    const { error: insertError } = await supabase.from('users').insert({
       id: userId,
       email: form.email,
       full_name: form.fullName || 'Staff User',
@@ -78,6 +78,13 @@ function Signup() {
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     });
+
+    if (insertError) {
+      console.error('INSERT ERROR:', insertError.message);
+      setError(insertError.message);
+      setLoading(false);
+      return;
+    }
 
     // Sign out so user logs in fresh
     await supabase.auth.signOut();
