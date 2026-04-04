@@ -1,47 +1,53 @@
-import { Link } from "react-router-dom"
+import { Coffee } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { contactDetails } from '../data/restaurantData';
 
-const portalLinks = [
-  { label: "Customer ordering", to: "/menu" },
-  { label: "Waiter POS", to: "/admin/pos" },
-  { label: "Kitchen display", to: "/admin/kitchen" },
-  { label: "Cashier billing", to: "/admin/pos" },
-  { label: "Manager dashboard", to: "/admin" },
-  { label: "Reports", to: "/admin/reports" },
-]
+const footerLinks = [
+  { label: 'Menu', to: '/menu' },
+  { label: 'Reserve table', to: '/reserve-table' },
+  { label: 'Floor layout', to: '/floor-layout' },
+  { label: 'Contact', to: '/contact' },
+];
 
 export default function Footer() {
   return (
-    <footer className="border-t border-slate-800 bg-slate-950">
-      <div className="container mx-auto grid cards-gap px-6 py-16 md:grid-cols-[1.1fr,0.9fr,0.8fr] lg:px-8">
+    <footer className="border-t border-[#374151] bg-[#0B1220]">
+      <div className="mx-auto grid max-w-7xl gap-8 px-6 py-12 md:grid-cols-3">
         <div>
-          <p className="section-kicker">POS Cafe</p>
-          <h3 className="mt-5 font-display text-3xl font-semibold text-white">
+          <div className="flex items-center gap-3 text-[#F59E0B]">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#374151] bg-[#111827]">
+              <Coffee className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-base font-medium text-[#F9FAFB]">POS Suite</p>
+              <p className="text-sm text-[#9CA3AF]">Restaurant operating system</p>
+            </div>
+          </div>
+          <p className="mt-4 max-w-sm text-sm leading-7 text-[#9CA3AF]">
             Restaurant control portal for floor, kitchen, billing, and reporting.
-          </h3>
-          <p className="mt-6 max-w-lg text-base leading-8 text-slate-400">
-            Single-business operations stack inspired by Odoo POS Cafe, optimized for dine-in service flow and role-based execution.
           </p>
         </div>
+
         <div>
-          <h4 className="font-accent text-sm font-semibold uppercase tracking-[0.28em] text-slate-300">Portal links</h4>
-          <div className="mt-6 grid gap-4">
-            {portalLinks.map((link) => (
-              <Link key={link.label} to={link.to} className="text-base text-slate-400 transition hover:text-amber-500">
+          <h3 className="text-base font-medium text-[#F9FAFB]">Navigation</h3>
+          <div className="mt-4 grid gap-3">
+            {footerLinks.map((link) => (
+              <Link key={link.label} to={link.to} className="text-sm text-[#9CA3AF] transition hover:text-[#F9FAFB]">
                 {link.label}
               </Link>
             ))}
           </div>
         </div>
+
         <div>
-          <h4 className="font-accent text-sm font-semibold uppercase tracking-[0.28em] text-slate-300">Access roles</h4>
-          <div className="mt-6 grid gap-4 text-base text-slate-400">
-            <Link to="/admin" className="transition hover:text-amber-500">Staff login</Link>
-            <Link to="/admin" className="transition hover:text-amber-500">Manager login</Link>
-            <Link to="/admin/kitchen" className="transition hover:text-amber-500">Kitchen display</Link>
-            <Link to="/admin/customer-display" className="transition hover:text-amber-500">Customer display</Link>
+          <h3 className="text-base font-medium text-[#F9FAFB]">Restaurant info</h3>
+          <div className="mt-4 grid gap-3 text-sm text-[#9CA3AF]">
+            <p>{contactDetails.address}</p>
+            <p>Privacy policy</p>
+            <p>Terms</p>
           </div>
         </div>
       </div>
     </footer>
-  )
+  );
 }

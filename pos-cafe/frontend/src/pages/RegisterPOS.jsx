@@ -1,5 +1,5 @@
 import RegisterLayout from '../components/RegisterLayout';
 
-export default function POS() {
+export default function RegisterPOS() {
   return <RegisterLayout />;
 }

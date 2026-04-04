@@ -68,8 +68,8 @@ export function getTableStatusTone(status) {
   const tones = {
     available: "border-teal-400/20 bg-teal-400/10 text-teal-300",
     occupied: "border-amber-500/20 bg-amber-500/10 text-amber-300",
-    reserved: "border-violet-400/20 bg-violet-400/10 text-violet-200",
-    cleaning: "border-rose-500/20 bg-rose-500/10 text-rose-300",
+    reserved: "border-sky-400/20 bg-sky-400/10 text-sky-300",
+    cleaning: "border-slate-500/20 bg-slate-500/10 text-slate-300",
   };
 
   return tones[status] || "border-slate-700 bg-slate-800 text-slate-300";
@@ -85,6 +85,8 @@ export function getOrderStatusTone(status) {
     new: "border-rose-500/20 bg-rose-500/10 text-rose-300",
     preparing: "border-amber-500/20 bg-amber-500/10 text-amber-300",
     ready: "border-teal-400/20 bg-teal-400/10 text-teal-300",
+    cooking: "border-orange-400/20 bg-orange-400/10 text-orange-300",
+    served: "border-sky-400/20 bg-sky-400/10 text-sky-300",
     paid: "border-teal-400/20 bg-teal-400/10 text-teal-300",
     split: "border-violet-400/20 bg-violet-400/10 text-violet-200",
     pending: "border-slate-700 bg-slate-800 text-slate-300",

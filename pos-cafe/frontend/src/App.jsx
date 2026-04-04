@@ -7,53 +7,68 @@ import DashboardLayout from "./layouts/DashboardLayout"
 // Public Pages
 import Landing from "./pages/Landing"
 import Menu from "./pages/Menu"
-import BookTable from "./pages/BookTable"
-import About from "./pages/About"
-import Contact from "./pages/Contact"
+import ReserveTable from "./pages/ReserveTable"
+import FloorLayout from "./pages/FloorLayout"
+import ContactPage from "./pages/ContactPage"
+import Login from "./pages/Login"
+import Signup from "./pages/Signup"
+import Checkout from "./pages/Checkout"
+import TableEntry from "./pages/TableEntry"
 
 // Admin Pages
 import Dashboard from "./pages/Dashboard"
-import Tables from "./pages/Tables"
-import POS from "./pages/POS"
-import KitchenDisplay from "./pages/KitchenDisplay"
+import Register from "./pages/Register"
+import Kitchen from "./pages/Kitchen"
 import CustomerDisplay from "./pages/CustomerDisplay"
-import Orders from "./pages/Orders"
-import Products from "./pages/Products"
-import Categories from "./pages/Categories"
-import Customers from "./pages/Customers"
-import Reports from "./pages/Reports"
-import Settings from "./pages/Settings"
+import ProtectedRoute from "./components/ProtectedRoute"
 
 function App() {
   return (
     <Routes>
-      {/* Public Landing Site */}
+      <Route path="/table/:tableId" element={<TableEntry />} />
+
       <Route element={<LandingLayout />}>
         <Route path="/" element={<Landing />} />
         <Route path="/menu" element={<Menu />} />
-        <Route path="/book-table" element={<BookTable />} />
-        <Route path="/about" element={<About />} />
-        <Route path="/contact" element={<Contact />} />
+        <Route path="/checkout" element={<Checkout />} />
+        <Route path="/reserve-table" element={<ReserveTable />} />
+        <Route path="/book-table" element={<Navigate to="/reserve-table" replace />} />
+        <Route path="/floor-layout" element={<FloorLayout />} />
+        <Route path="/contact" element={<ContactPage />} />
+        <Route path="/about" element={<Navigate to="/" replace />} />
       </Route>
 
-      {/* Fullscreen Views */}
+      <Route path="/login" element={<Login />} />
+      <Route path="/signup" element={<Signup />} />
+
       <Route path="/admin/customer-display" element={<CustomerDisplay />} />
 
-      {/* Admin Dashboard */}
-      <Route path="/admin" element={<DashboardLayout />}>
-        <Route index element={<Dashboard />} />
-        <Route path="tables" element={<Tables />} />
-        <Route path="pos" element={<POS />} />
-        <Route path="kitchen" element={<KitchenDisplay />} />
-        <Route path="orders" element={<Orders />} />
-        <Route path="products" element={<Products />} />
-        <Route path="categories" element={<Categories />} />
-        <Route path="customers" element={<Customers />} />
-        <Route path="reports" element={<Reports />} />
-        <Route path="settings" element={<Settings />} />
+      <Route path="/customer-ordering" element={<Navigate to="/menu" replace />} />
+
+      <Route element={<ProtectedRoute />}>
+        <Route element={<DashboardLayout />}>
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/billing" element={<Register />} />
+          <Route path="/kitchen" element={<Kitchen />} />
+          <Route path="/tables" element={<FloorLayout />} />
+          <Route path="/orders" element={<Dashboard />} />
+          <Route path="/reports" element={<Dashboard />} />
+        </Route>
       </Route>
 
-      {/* Fallback */}
+      <Route path="/admin" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/admin/pos" element={<Navigate to="/register" replace />} />
+      <Route path="/admin/billing" element={<Navigate to="/billing" replace />} />
+      <Route path="/admin/kitchen" element={<Navigate to="/kitchen" replace />} />
+      <Route path="/admin/tables" element={<Navigate to="/tables" replace />} />
+      <Route path="/admin/orders" element={<Navigate to="/orders" replace />} />
+      <Route path="/admin/products" element={<Navigate to="/reports" replace />} />
+      <Route path="/admin/categories" element={<Navigate to="/reports" replace />} />
+      <Route path="/admin/customers" element={<Navigate to="/reports" replace />} />
+      <Route path="/admin/reports" element={<Navigate to="/reports" replace />} />
+      <Route path="/admin/settings" element={<Navigate to="/dashboard" replace />} />
+
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )

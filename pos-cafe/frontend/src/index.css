@@ -8,14 +8,14 @@
 
 @layer base {
   :root {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background: 218 45% 8%;
+    --foreground: 220 33% 96%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 220 34% 14%;
+    --card-foreground: 220 33% 96%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 220 34% 14%;
+    --popover-foreground: 220 33% 96%;
 
     --primary: 38 92% 50%;
     --primary-foreground: 222.2 47.4% 11.2%;
@@ -23,17 +23,17 @@
     --secondary: 172 66% 50%;
     --secondary-foreground: 222.2 47.4% 11.2%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 217 28% 20%;
+    --muted-foreground: 215 16% 68%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 217 28% 20%;
+    --accent-foreground: 220 33% 96%;
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
+    --border: 220 20% 24%;
+    --input: 220 20% 24%;
     --ring: 38 92% 50%;
 
     color-scheme: dark;
@@ -45,9 +45,17 @@
     border-color: hsl(var(--border));
   }
 
+  html,
+  body,
+  #root {
+    overflow-x: hidden;
+  }
+
   body {
-    @apply bg-slate-950 text-white;
+    background: #0b1220;
+    color: #f8fafc;
     font-family: 'Inter Variable', system-ui, -apple-system, sans-serif;
+    text-rendering: optimizeLegibility;
   }
 
   h1,
@@ -58,6 +66,11 @@
   h6 {
     font-family: 'Clash Display', 'Inter Variable', system-ui, sans-serif;
     letter-spacing: -0.03em;
+  }
+
+  ::selection {
+    background: rgba(245, 158, 11, 0.3);
+    color: #ffffff;
   }
 }
 
@@ -75,11 +88,11 @@
   }
 
   .glass-panel {
-    @apply bg-slate-900/80 backdrop-blur-xl border border-slate-800 shadow-premium;
+    @apply border border-white/10 bg-slate-900/70 shadow-xl backdrop-blur-xl;
   }
   
   .dark-card {
-    @apply rounded-2xl border border-slate-800 bg-slate-900 shadow-xl transition-all hover:bg-slate-800;
+    @apply rounded-3xl border border-white/10 bg-slate-900 shadow-xl transition-all hover:bg-slate-800;
   }
 
   .premium-gradient-text {
@@ -87,7 +100,7 @@
   }
 
   .section-kicker {
-    @apply font-accent text-xs font-semibold uppercase tracking-[0.32em] text-teal-400;
+    @apply text-sm font-medium text-amber-400;
   }
 
   .section-heading {
@@ -96,5 +109,18 @@
 
   .section-body {
     @apply text-base leading-8 text-slate-400 md:text-lg;
+  }
+}
+
+@layer utilities {
+  .surface-card {
+    background: #111827;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 24px 60px rgba(2, 6, 23, 0.38);
+  }
+
+  .surface-elevated {
+    background: #1f2937;
+    border: 1px solid rgba(255, 255, 255, 0.08);
   }
 }

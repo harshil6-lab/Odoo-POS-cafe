@@ -1,133 +1,85 @@
-import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Cuboid, LayoutGrid, Sparkles, TimerReset, UsersRound } from 'lucide-react';
-import Floor3D from '../3d/Floor3D';
-import TableCard from '../components/TableCard';
+import { Link } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
-import { formatCurrency, formatElapsedTime } from '../utils/helpers';
+import { tablesData } from '../data/restaurantData';
 
-const MOCK_TABLES = [
-  { id: '1', label: 'T01', status: 'available', seats: 2, orderAmount: 0, waiter: 'Aarav', elapsedMinutes: 0, size: { width: 1.4, depth: 1.4 }, position: { x: -4, z: -2.5 } },
-  { id: '2', label: 'T02', status: 'occupied', seats: 4, orderAmount: 1640, waiter: 'Nisha', elapsedMinutes: 18, size: { width: 1.6, depth: 1.6 }, position: { x: -1.2, z: -2.5 } },
-  { id: '3', label: 'T03', status: 'reserved', seats: 4, orderAmount: 0, waiter: 'Rohan', elapsedMinutes: 32, size: { width: 1.6, depth: 1.6 }, position: { x: 1.8, z: -2.5 } },
-  { id: '4', label: 'T04', status: 'cleaning', seats: 6, orderAmount: 0, waiter: 'Maya', elapsedMinutes: 11, size: { width: 2.1, depth: 1.6 }, position: { x: 5, z: -2.5 } },
-  { id: '5', label: 'T05', status: 'occupied', seats: 2, orderAmount: 780, waiter: 'Aarav', elapsedMinutes: 9, size: { width: 1.4, depth: 1.4 }, position: { x: -4, z: 1.2 } },
-  { id: '6', label: 'T06', status: 'available', seats: 2, orderAmount: 0, waiter: 'Nisha', elapsedMinutes: 0, size: { width: 1.4, depth: 1.4 }, position: { x: -1.2, z: 1.2 } },
-  { id: '7', label: 'T07', status: 'occupied', seats: 4, orderAmount: 2240, waiter: 'Rohan', elapsedMinutes: 24, size: { width: 1.8, depth: 1.6 }, position: { x: 2.1, z: 1.2 } },
-  { id: '8', label: 'T08', status: 'reserved', seats: 8, orderAmount: 0, waiter: 'Maya', elapsedMinutes: 41, size: { width: 2.5, depth: 1.8 }, position: { x: 5.4, z: 1.2 } },
-];
-
-function SummaryTile({ label, value, icon: Icon }) {
-  return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-lg">
-      <div className="flex items-center gap-3 text-slate-400">
-        <Icon className="h-5 w-5 text-amber-400" />
-        <span className="text-sm">{label}</span>
-      </div>
-      <p className="mt-4 font-display text-4xl font-semibold text-white">{value}</p>
-    </div>
-  );
-}
+const statusTone = {
+  available: 'border-teal-400/20 bg-teal-400/10 text-teal-300',
+  occupied: 'border-amber-400/20 bg-amber-400/10 text-amber-300',
+  reserved: 'border-blue-400/20 bg-blue-400/10 text-blue-300',
+  cleaning: 'border-rose-400/20 bg-rose-400/10 text-rose-300',
+};
 
 export default function Tables() {
-  const navigate = useNavigate();
-  const [viewMode, setViewMode] = useState('2d');
-  const [selectedTableId, setSelectedTableId] = useState(MOCK_TABLES[1].id);
-
-  const selectedTable = useMemo(() => MOCK_TABLES.find((table) => table.id === selectedTableId) || MOCK_TABLES[0], [selectedTableId]);
-
-  const summary = useMemo(() => ({
-    active: MOCK_TABLES.filter((table) => table.status === 'occupied').length,
-    covers: MOCK_TABLES.reduce((sum, table) => sum + table.seats, 0),
-    revenue: MOCK_TABLES.reduce((sum, table) => sum + table.orderAmount, 0),
-  }), []);
+  const occupiedCount = tablesData.filter((table) => table.status === 'occupied').length;
+  const reservedCount = tablesData.filter((table) => table.status === 'reserved').length;
+  const availableCount = tablesData.filter((table) => table.status === 'available').length;
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
+    <div className="space-y-6">
+      <div className="flex flex-col gap-5 rounded-[28px] border border-white/10 bg-[#111827] p-6 shadow-[0_24px_60px_rgba(2,6,23,0.38)] lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="font-accent text-xs uppercase tracking-[0.28em] text-slate-500">Dining room control</p>
-          <h1 className="mt-3 font-display text-4xl font-semibold text-white">Tables & floor layout</h1>
-          <p className="mt-3 max-w-2xl text-base leading-7 text-slate-400">Touch-friendly table control with timer visibility, waiter assignment, and instant jump into the register workflow.</p>
+          <p className="text-sm font-medium text-slate-400">Floor overview</p>
+          <h1 className="mt-2 text-3xl font-semibold text-slate-50">Tables</h1>
+          <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-400 md:text-base">
+            Monitor seating, reservations, and active bills from a layout that is clean enough for fast service.
+          </p>
         </div>
-        <div className="flex rounded-2xl border border-slate-800 bg-slate-900 p-1 shadow-lg">
-          <Button variant={viewMode === '2d' ? 'default' : 'ghost'} className="rounded-2xl font-accent uppercase tracking-[0.18em]" onClick={() => setViewMode('2d')}>
-            <LayoutGrid className="mr-2 h-4 w-4" />
-            2D layout
-          </Button>
-          <Button variant={viewMode === '3d' ? 'default' : 'ghost'} className="rounded-2xl font-accent uppercase tracking-[0.18em]" onClick={() => setViewMode('3d')}>
-            <Cuboid className="mr-2 h-4 w-4" />
-            3D layout
-          </Button>
-        </div>
-      </div>
 
-      <div className="grid gap-6 xl:grid-cols-3">
-        <SummaryTile label="Active tables" value={summary.active} icon={Sparkles} />
-        <SummaryTile label="Seat capacity" value={summary.covers} icon={UsersRound} />
-        <SummaryTile label="Open order amount" value={formatCurrency(summary.revenue)} icon={TimerReset} />
-      </div>
-
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr),360px]">
-        <div className="rounded-[2rem] border border-slate-800 bg-slate-900 p-6 shadow-lg">
-          <div className="rounded-[1.5rem] border border-slate-800 bg-slate-950 p-4 shadow-inner">
-            {viewMode === '3d' ? (
-              <div className="h-[680px]">
-                <Floor3D tables={MOCK_TABLES} onTableClick={setSelectedTableId} selectedTableId={selectedTableId} />
-              </div>
-            ) : (
-              <div className="rounded-[1.5rem] border border-slate-800 bg-[linear-gradient(rgba(148,163,184,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,0.08)_1px,transparent_1px)] [background-size:88px_88px] p-6">
-                <div className="grid gap-6 md:grid-cols-2 2xl:grid-cols-3">
-                  {MOCK_TABLES.map((table) => (
-                    <TableCard
-                      key={table.id}
-                      table={table}
-                      isSelected={selectedTableId === table.id}
-                      onSelect={() => setSelectedTableId(table.id)}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
+        <div className="grid gap-3 sm:grid-cols-3">
+          <div className="rounded-2xl border border-white/10 bg-[#0B1220] px-4 py-4">
+            <p className="text-2xl font-semibold text-slate-50">{availableCount}</p>
+            <p className="mt-1 text-sm text-slate-400">Available tables</p>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-[#0B1220] px-4 py-4">
+            <p className="text-2xl font-semibold text-slate-50">{occupiedCount}</p>
+            <p className="mt-1 text-sm text-slate-400">Occupied now</p>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-[#0B1220] px-4 py-4">
+            <p className="text-2xl font-semibold text-slate-50">{reservedCount}</p>
+            <p className="mt-1 text-sm text-slate-400">Upcoming reservations</p>
           </div>
         </div>
+      </div>
 
-        <Card className="h-fit sticky top-24">
-          <CardHeader className="border-b border-slate-800 bg-slate-950/60">
-            <CardTitle className="font-display text-3xl">{selectedTable.label}</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-5 p-6">
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
-              <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
-                <p className="text-sm text-slate-500">Waiter</p>
-                <p className="mt-3 text-xl font-semibold text-white">{selectedTable.waiter}</p>
+      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+        {tablesData.map((table) => (
+          <Card key={table.id} className="overflow-hidden">
+            <CardHeader className="p-5">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-sm font-medium text-slate-400">{table.zone}</p>
+                  <CardTitle className="mt-2 text-2xl">{table.label}</CardTitle>
+                </div>
+                <span className={`rounded-full border px-3 py-1 text-[11px] font-medium tracking-[0.14em] ${statusTone[table.status]}`}>
+                  {table.status}
+                </span>
               </div>
-              <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
-                <p className="text-sm text-slate-500">Order timer</p>
-                <p className="mt-3 text-xl font-semibold text-amber-400">{formatElapsedTime(selectedTable.elapsedMinutes)}</p>
+            </CardHeader>
+            <CardContent className="space-y-5 p-5 pt-0">
+              <div className="rounded-2xl border border-white/10 bg-[#0B1220] p-4">
+                <div className="flex items-center justify-between text-sm text-slate-400">
+                  <span>Seats</span>
+                  <span className="text-slate-200">{table.seats}</span>
+                </div>
+                <div className="mt-3 flex items-center justify-between text-sm text-slate-400">
+                  <span>Server</span>
+                  <span className="text-slate-200">{table.server}</span>
+                </div>
+                <div className="mt-3 flex items-center justify-between text-sm text-slate-400">
+                  <span>Order amount</span>
+                  <span className="font-medium text-amber-300">{table.orderAmount}</span>
+                </div>
               </div>
-              <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
-                <p className="text-sm text-slate-500">Seats</p>
-                <p className="mt-3 text-xl font-semibold text-white">{selectedTable.seats}</p>
-              </div>
-              <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
-                <p className="text-sm text-slate-500">Open amount</p>
-                <p className="mt-3 text-xl font-semibold text-teal-300">{formatCurrency(selectedTable.orderAmount)}</p>
-              </div>
-            </div>
 
-            <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-5">
-              <p className="font-accent text-xs uppercase tracking-[0.24em] text-slate-500">Status</p>
-              <p className="mt-3 text-lg font-semibold capitalize text-white">{selectedTable.status}</p>
-              <p className="mt-3 text-sm leading-7 text-slate-400">Tap into the register to add items, send notes to the kitchen, or close payment for this table.</p>
-            </div>
+              <p className="text-sm leading-7 text-slate-400">{table.note}</p>
 
-            <Button className="h-14 w-full rounded-2xl font-accent uppercase tracking-[0.18em]" onClick={() => navigate('/admin/pos')}>
-              Open register for {selectedTable.label}
-            </Button>
-          </CardContent>
-        </Card>
+              <Link to="/register" className="inline-flex w-full">
+                <Button variant="outline" className="h-11 w-full text-sm">Open register</Button>
+              </Link>
+            </CardContent>
+          </Card>
+        ))}
       </div>
     </div>
   );
