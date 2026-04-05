@@ -155,39 +155,19 @@ export const AuthProvider = ({ children }) => {
       throw new Error('Login failed: No user data returned.');
     }
 
-    // Check if profile exists
+    // Fetch role from users table — profile must already exist from signup
     const { data: profile } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', data.user.id)
-      .maybeSingle();
-
-    if (!profile) {
-      console.log('Creating missing user profile...');
-      const meta = data.user.user_metadata || {};
-      const { error: insertErr } = await supabase.from('users').insert({
-        id: data.user.id,
-        email: data.user.email,
-        full_name: meta.full_name || 'Staff User',
-        role: 'manager',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      });
-
-      if (insertErr) {
-        console.error('Profile insert failed:', insertErr.message);
-        throw new Error('Failed to create user profile: ' + insertErr.message);
-      }
-    }
-
-    // Fetch role (re-fetch to get latest)
-    const { data: updatedProfile } = await supabase
       .from('users')
       .select('role')
       .eq('id', data.user.id)
-      .single();
+      .maybeSingle();
 
-    const role = updatedProfile?.role || 'manager';
+    if (!profile || !profile.role) {
+      await supabase.auth.signOut();
+      throw new Error('User profile missing. Contact manager to set up your account.');
+    }
+
+    const role = profile.role;
 
     setSession(data.session);
     setUser(data.user);

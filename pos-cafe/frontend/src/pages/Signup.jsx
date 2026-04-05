@@ -12,7 +12,7 @@ function Signup() {
   const navigate = useNavigate();
   const { user, redirectPath, loading: authLoading } = useAuth();
   const [form, setForm] = useState({ fullName: '', phone: '', email: '', password: '' });
-  const [selectedRole, setSelectedRole] = useState('manager');
+  const [selectedRole, setSelectedRole] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -91,7 +91,7 @@ function Signup() {
 
     setSuccess('Account created! You can now sign in.');
     setForm({ fullName: '', phone: '', email: '', password: '' });
-    setSelectedRole('manager');
+    setSelectedRole('');
     setLoading(false);
 
     setTimeout(() => {
@@ -166,7 +166,9 @@ function Signup() {
               setSelectedRole(e.target.value);
             }}
             className="h-11 w-full rounded-xl border border-white/[0.08] bg-surface px-4 text-sm text-white focus:border-primary/50 focus:outline-none"
+            required
           >
+            <option value="" disabled>Select role</option>
             <option value="manager">Manager</option>
             <option value="waiter">Waiter</option>
             <option value="chef">Chef</option>
