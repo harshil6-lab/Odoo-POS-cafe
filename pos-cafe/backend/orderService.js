@@ -7,7 +7,7 @@ const orderSelect = `
   status,
   created_at,
   table:tables(id, table_code, status, floor:floors(name)),
-  items:order_items(
+  items:order_items!order_items_order_id_fkey(
     id,
     quantity,
     preferences,

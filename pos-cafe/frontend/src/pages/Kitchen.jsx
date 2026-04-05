@@ -11,7 +11,7 @@ const ORDER_SELECT = `
   customer_name,
   status,
   created_at,
-  order_items (
+  order_items!order_items_order_id_fkey (
     id,
     quantity,
     notes,
