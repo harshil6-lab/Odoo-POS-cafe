@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useRazorpay } from 'react-razorpay';
+import { motion } from 'framer-motion';
+import PageWrapper from '../components/PageWrapper';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { useAppState } from '../context/AppStateContext';
@@ -253,8 +255,13 @@ export default function Billing() {
   };
 
   return (
-    <div className="page-container space-y-6">
-      <div className="glass-card p-6">
+    <PageWrapper className="page-container space-y-6">
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35 }}
+        className="glass-card p-6"
+      >
         <div className="flex items-center gap-3">
           <span className="text-2xl">💳</span>
           <div>
@@ -265,7 +272,7 @@ export default function Billing() {
             </p>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {message ? <p className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-300">{message}</p> : null}
       {error ? <p className="rounded-xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-300">{error}</p> : null}
@@ -349,10 +356,10 @@ export default function Billing() {
                   ))}
                 </div>
 
-                <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+                <div className="rounded-xl border border-primary/20 bg-primary/[0.06] p-4">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-slate-400">Grand total</span>
-                    <span className="text-lg font-bold text-white">{formatCurrency(selectedOrder.total)}</span>
+                    <span className="font-medium text-slate-300">Grand total</span>
+                    <span className="font-display text-2xl font-bold text-white">{formatCurrency(selectedOrder.total)}</span>
                   </div>
                 </div>
 
@@ -381,6 +388,6 @@ export default function Billing() {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </PageWrapper>
   );
 }

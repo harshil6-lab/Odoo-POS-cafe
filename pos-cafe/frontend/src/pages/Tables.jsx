@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import PageWrapper from '../components/PageWrapper';
 import TableScene from '../components/TableScene';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
@@ -28,10 +30,21 @@ export default function Tables() {
   const occupiedCount = tables.filter((table) => table.status === 'occupied').length;
   const reservedCount = tables.filter((table) => table.status === 'reserved').length;
 
+  const statusGlow = {
+    available: 'hover:shadow-glow-green/20',
+    occupied: 'hover:shadow-glow-red/20',
+    reserved: 'hover:shadow-glow-amber/20',
+  };
+
   return (
-    <div className="page-container space-y-8">
+    <PageWrapper className="page-container space-y-8">
       {/* Header */}
-      <div className="glass-card p-6">
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35 }}
+        className="glass-card p-6"
+      >
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="flex items-center gap-3">
             <span className="text-2xl">🪑</span>
@@ -46,18 +59,24 @@ export default function Tables() {
 
           <div className="grid gap-3 sm:grid-cols-3">
             {[
-              { value: availableCount, label: 'Available', color: 'text-emerald-400' },
-              { value: occupiedCount, label: 'Occupied', color: 'text-red-400' },
-              { value: reservedCount, label: 'Reserved', color: 'text-amber-400' },
-            ].map((stat) => (
-              <div key={stat.label} className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3">
+              { value: availableCount, label: 'Available', color: 'text-emerald-400', glow: 'shadow-glow-green/20' },
+              { value: occupiedCount, label: 'Occupied', color: 'text-red-400', glow: 'shadow-glow-red/20' },
+              { value: reservedCount, label: 'Reserved', color: 'text-amber-400', glow: 'shadow-glow-amber/20' },
+            ].map((stat, i) => (
+              <motion.div
+                key={stat.label}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.1 + i * 0.05 }}
+                className={`rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 transition-shadow duration-300 ${stat.glow}`}
+              >
                 <p className={`font-display text-2xl font-bold ${stat.color}`}>{stat.value}</p>
                 <p className="mt-0.5 text-[11px] text-slate-500">{stat.label}</p>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
-      </div>
+      </motion.div>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr),420px]">
         <Card className="glass-card">
@@ -83,8 +102,15 @@ export default function Tables() {
             </div>
           </CardHeader>
           <CardContent className="grid gap-4 p-5 pt-0 md:grid-cols-2 xl:grid-cols-3">
-            {floorTables.length ? floorTables.map((table) => (
-              <div key={table.dbId || table.id} className="group rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 transition-all duration-200 hover:scale-[1.02] hover:bg-white/[0.04] hover:shadow-card-hover">
+            {floorTables.length ? floorTables.map((table, idx) => (
+              <motion.div
+                key={table.dbId || table.id}
+                initial={{ opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: idx * 0.03 }}
+                whileHover={{ scale: 1.03 }}
+                className={`group rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 transition-all duration-200 hover:bg-white/[0.05] hover:shadow-card-hover ${statusGlow[table.status] || ''}`}
+              >
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-[11px] text-slate-500">{table.floor}</p>
@@ -105,7 +131,7 @@ export default function Tables() {
 
                 <Button
                   size="sm"
-                  className="mt-3 w-full"
+                  className="mt-3 w-full transition-transform group-hover:scale-[1.02]"
                   onClick={() => {
                     const id = table.dbId || table.id;
                     if (role === 'cashier') {
@@ -119,10 +145,11 @@ export default function Tables() {
                 >
                   {role === 'cashier' ? 'View bill' : role === 'manager' ? 'View details' : 'Open register'}
                 </Button>
-              </div>
+              </motion.div>
             )) : (
-              <div className="md:col-span-2 xl:col-span-3 rounded-xl border border-dashed border-white/[0.06] bg-white/[0.01] p-6 text-center text-sm text-slate-500">
-                No live tables for {activeFloor}.
+              <div className="md:col-span-2 xl:col-span-3 rounded-xl border border-dashed border-white/[0.06] bg-white/[0.01] p-8 text-center">
+                <p className="text-2xl">🪑</p>
+                <p className="mt-2 text-sm text-slate-500">No live tables for {activeFloor}.</p>
               </div>
             )}
           </CardContent>
@@ -146,6 +173,6 @@ export default function Tables() {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </PageWrapper>
   );
 }
