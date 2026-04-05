@@ -40,14 +40,14 @@ export default function Navbar({ isDashboard = false }) {
   if (!isDashboard) {
     return (
       <>
-        <header className="sticky top-0 z-50 border-b border-white/[0.06] bg-[#0B0F1A]/80 backdrop-blur-2xl">
+        <header className="sticky top-0 z-50 border-b border-white/[0.06] bg-background/80 backdrop-blur-2xl shadow-lg">
           <div className="mx-auto flex min-h-[72px] w-full max-w-7xl items-center gap-6 px-6">
             {/* Logo */}
             <Link to="/" className="flex shrink-0 items-center gap-3 transition hover:opacity-80">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/15 shadow-glow-red">
                 <span className="text-lg">🍽️</span>
               </div>
-              <span className="font-display text-lg font-bold text-white">POS Cafe</span>
+              <span className="font-display text-lg font-bold text-white">POS <span className="text-primary">Café</span></span>
             </Link>
 
             {/* Desktop nav */}
@@ -109,7 +109,7 @@ export default function Navbar({ isDashboard = false }) {
 
         {/* Mobile drawer */}
         {mobileOpen && (
-          <div className="fixed inset-0 top-[72px] z-40 bg-background/95 backdrop-blur-xl md:hidden animate-fade-in">
+          <div className="fixed inset-0 top-[72px] z-40 bg-background/98 backdrop-blur-xl md:hidden animate-fade-in">
             <nav className="flex flex-col gap-1 p-6">
               {navLinks.map((link) => <NavLink key={link.label} link={link} onClick={() => setMobileOpen(false)} />)}
               <hr className="my-4 border-white/[0.06]" />
@@ -141,14 +141,14 @@ export default function Navbar({ isDashboard = false }) {
 
   // Dashboard navbar
   return (
-    <header className="sticky top-0 z-50 border-b border-white/[0.06] bg-[#0B0F1A]/90 backdrop-blur-2xl">
+    <header className="sticky top-0 z-50 border-b border-white/[0.06] bg-background/90 backdrop-blur-2xl shadow-lg">
       <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-6">
         <Link to="/" className="flex items-center gap-3 transition duration-200 hover:opacity-90">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/15 shadow-glow-red">
             <Coffee size={18} className="text-primary" />
           </div>
           <div>
-            <p className="font-display text-sm font-bold text-white">Dashboard</p>
+            <p className="font-display text-sm font-bold text-white">POS <span className="text-primary">Café</span></p>
             <p className="text-[11px] text-slate-500">{roleBadge}</p>
           </div>
         </Link>

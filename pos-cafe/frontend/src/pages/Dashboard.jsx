@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { motion } from 'framer-motion';
+import PageWrapper from '../components/PageWrapper';
 import { ClipboardList, Coffee, LayoutGrid, ReceiptText } from 'lucide-react';
 import KitchenStatusBadge, { KITCHEN_ORDER_STATUSES } from '../components/KitchenStatusBadge';
 import TableGrid from '../components/TableGrid';
@@ -46,9 +48,14 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="page-container space-y-8">
+    <PageWrapper className="page-container space-y-8">
       {/* Header */}
-      <div className="glass-card p-6">
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35 }}
+        className="glass-card p-6"
+      >
         <div className="flex items-center gap-3">
           <span className="text-2xl">👋</span>
           <div>
@@ -59,7 +66,7 @@ export default function Dashboard() {
         <p className="mt-3 text-sm leading-relaxed text-slate-400">
           Keep an eye on floor activity, kitchen flow, and the latest Supabase orders from one place.
         </p>
-      </div>
+      </motion.div>
 
       {/* Metric cards */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -67,8 +74,15 @@ export default function Dashboard() {
           const Icon = icons[index];
           const colors = ['text-primary', 'text-accent', 'text-teal-400', 'text-violet-400'];
           const bgColors = ['bg-primary/10', 'bg-accent/10', 'bg-teal-400/10', 'bg-violet-400/10'];
+          const glows = ['shadow-glow-red/20', 'shadow-glow-amber/20', 'shadow-glow-green/20', 'shadow-premium/30'];
           return (
-            <div key={metric.label} className="metric-card group">
+            <motion.div
+              key={metric.label}
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35, delay: index * 0.06 }}
+              className={`metric-card group transition-shadow duration-300 hover:${glows[index]}`}
+            >
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="text-xs font-medium uppercase tracking-wider text-slate-500">{metric.label}</p>
@@ -79,7 +93,7 @@ export default function Dashboard() {
                   <Icon className="h-5 w-5" />
                 </div>
               </div>
-            </div>
+            </motion.div>
           );
         })}
       </div>
@@ -183,6 +197,6 @@ export default function Dashboard() {
           )) : <p className="text-sm text-slate-500">No menu items were loaded from Supabase.</p>}
         </CardContent>
       </Card>
-    </div>
+    </PageWrapper>
   );
 }

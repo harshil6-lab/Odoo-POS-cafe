@@ -7,6 +7,7 @@ import DashboardLayout from "./layouts/DashboardLayout"
 // Public Pages
 import Landing from "./pages/Landing"
 import Menu from "./pages/Menu"
+import About from "./pages/About"
 import ReserveTable from "./pages/ReserveTable"
 import FloorLayout from "./pages/FloorLayout"
 import ContactPage from "./pages/ContactPage"
@@ -58,7 +59,7 @@ function App() {
         <Route path="/book-table" element={<Navigate to="/reserve-table" replace />} />
         <Route path="/floor-layout" element={<FloorLayout />} />
         <Route path="/contact" element={<ContactPage />} />
-        <Route path="/about" element={<Navigate to="/" replace />} />
+        <Route path="/about" element={<About />} />
       </Route>
 
       <Route path="/login" element={<Login />} />
