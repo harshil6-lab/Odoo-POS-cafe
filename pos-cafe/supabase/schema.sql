@@ -349,6 +349,12 @@ values
   ('T4', 'Balcony', 6, 70, 20)
 on conflict (name) do nothing;
 
+update public.users
+set id = auth.users.id
+from auth.users
+where public.users.email = auth.users.email
+  and public.users.id <> auth.users.id;
+
 insert into public.categories (name, description, sort_order)
 values
   ('Coffee', 'Hot and cold coffee beverages', 1),

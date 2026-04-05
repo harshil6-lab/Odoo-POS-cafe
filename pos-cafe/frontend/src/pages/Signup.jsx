@@ -69,7 +69,6 @@ function Signup() {
     }
 
     // Upsert profile so role is stored immediately
-    console.log('FINAL ROLE SENT:', selectedRole);
     const { error: insertError } = await supabase.from('users').insert({
       id: userId,
       email: form.email,
@@ -80,7 +79,6 @@ function Signup() {
     });
 
     if (insertError) {
-      console.error('INSERT ERROR:', insertError.message);
       setError(insertError.message);
       setLoading(false);
       return;
@@ -162,7 +160,6 @@ function Signup() {
           <select
             value={selectedRole}
             onChange={(e) => {
-              console.log('Selected role:', e.target.value);
               setSelectedRole(e.target.value);
             }}
             className="h-11 w-full rounded-xl border border-white/[0.08] bg-surface px-4 text-sm text-white focus:border-primary/50 focus:outline-none"

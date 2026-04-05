@@ -53,7 +53,6 @@ export default function Kitchen() {
       return;
     }
 
-    console.log('Kitchen Data:', data);
     setOrders((data ?? []).map(mapOrder));
     setLoading(false);
   }, []);
