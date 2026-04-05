@@ -24,7 +24,7 @@ const BILL_SELECT = `
   service_charge,
   total,
   created_at,
-  order_items(
+  order_items!order_items_order_id_fkey(
     id,
     quantity,
     price,
