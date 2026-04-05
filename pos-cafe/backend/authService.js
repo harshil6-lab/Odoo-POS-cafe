@@ -3,11 +3,14 @@ import { getRedirectPathForRole, getUserProfile, isStaffRole, normalizeRole } fr
 
 function validateStaffRole(role) {
   const normalizedRole = normalizeRole(role);
-
-  if (!isStaffRole(normalizedRole)) {
-    throw new Error('Only manager, waiter, and cashier accounts are allowed.');
+  if (
+    normalizedRole !== "manager" &&
+    normalizedRole !== "waiter" &&
+    normalizedRole !== "cashier" &&
+    normalizedRole !== "chef"
+  ) {
+    throw new Error("Invalid staff role.");
   }
-
   return normalizedRole;
 }
 
@@ -27,18 +30,14 @@ export function onAuthStateChange(callback) {
 
 export async function signInStaff({ email, password }) {
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-
   if (error) {
     throw error;
   }
-
   const profile = await getUserProfile(data.user.id);
-
-  if (!profile || !isStaffRole(profile.role)) {
+  if (!profile || !["manager","waiter","cashier","chef"].includes(profile.role)) {
     await supabase.auth.signOut();
     throw new Error('This account does not have staff access.');
   }
-
   return {
     ...data,
     profile,
@@ -78,40 +77,22 @@ export async function signUpStaff({ email, password, fullName }) {
 export async function assignRoleToUser(userId, roleName) {
   const normalizedRole = validateStaffRole(roleName);
   const serviceClient = createServiceClient();
-
-  const { data: roleRecord, error: roleError } = await serviceClient
-    .from('roles')
-    .select('id, name')
-    .eq('name', normalizedRole)
-    .maybeSingle();
-
-  if (roleError) {
-    throw roleError;
-  }
-
-  if (!roleRecord) {
-    throw new Error(`Role ${normalizedRole} does not exist.`);
-  }
-
-  const { data: updatedUser, error: updateError } = await serviceClient
-    .from('users')
-    .update({ role_id: roleRecord.id, updated_at: new Date().toISOString() })
-    .eq('id', userId)
-    .select('id, full_name, email, created_at, role:roles(id, name)')
+  const { data, error } = await serviceClient
+    .from("users")
+    .update({
+      role: normalizedRole,
+      updated_at: new Date().toISOString()
+    })
+    .eq("id", userId)
+    .select()
     .single();
-
-  if (updateError) {
-    throw updateError;
+  if (error) {
+    throw error;
   }
-
   return {
-    id: updatedUser.id,
-    full_name: updatedUser.full_name,
-    email: updatedUser.email,
-    created_at: updatedUser.created_at,
-    role: normalizeRole(updatedUser.role?.name),
-    role_id: updatedUser.role?.id ?? null,
-    redirectTo: getRedirectPathForRole(updatedUser.role?.name),
+    ...data,
+    role: normalizedRole,
+    redirectTo: getRedirectPathForRole(normalizedRole),
   };
 }
 

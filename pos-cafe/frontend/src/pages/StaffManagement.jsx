@@ -65,6 +65,21 @@ export default function StaffManagement() {
     }
   };
 
+  const handleDelete = async (user) => {
+    if (!window.confirm(`Delete staff member "${user.full_name || user.email}"? This cannot be undone.`)) return;
+    setSaving(user.id);
+    try {
+      const { error } = await supabase.from('users').delete().eq('id', user.id);
+      if (error) {
+        alert('Delete failed: ' + error.message);
+        return;
+      }
+      setStaff((prev) => prev.filter((u) => u.id !== user.id));
+    } finally {
+      setSaving(null);
+    }
+  };
+
   if (role !== 'manager') {
     return (
       <div className="flex min-h-[60vh] items-center justify-center text-sm text-slate-400">
@@ -139,18 +154,28 @@ export default function StaffManagement() {
                     </td>
 
                     <td className="px-5 py-3">
-                      <button
-                        type="button"
-                        disabled={!u._dirty || saving === u.id}
-                        onClick={() => handleSave(u)}
-                        className={`rounded-lg px-4 py-1.5 text-sm font-medium transition ${
-                          u._dirty
-                            ? 'bg-amber-500 text-black hover:bg-amber-400'
-                            : 'cursor-default bg-slate-800 text-slate-500'
-                        }`}
-                      >
-                        {saving === u.id ? 'Saving...' : 'Save'}
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          disabled={!u._dirty || saving === u.id}
+                          onClick={() => handleSave(u)}
+                          className={`rounded-lg px-4 py-1.5 text-sm font-medium transition ${
+                            u._dirty
+                              ? 'bg-amber-500 text-black hover:bg-amber-400'
+                              : 'cursor-default bg-slate-800 text-slate-500'
+                          }`}
+                        >
+                          {saving === u.id ? 'Saving...' : 'Save'}
+                        </button>
+                        <button
+                          type="button"
+                          disabled={saving === u.id}
+                          onClick={() => handleDelete(u)}
+                          className="rounded-lg bg-red-600/20 px-3 py-1.5 text-sm font-medium text-red-400 transition hover:bg-red-600/40"
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))

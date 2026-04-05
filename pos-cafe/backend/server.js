@@ -1,7 +1,12 @@
 import express from 'express';
 import Razorpay from 'razorpay';
 import cors from 'cors';
-import 'dotenv/config';
+import dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: join(__dirname, '.env') });
 
 const app = express();
 
@@ -34,6 +39,6 @@ app.post('/create-order', async (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3001;
 
 app.listen(PORT, () => console.log(`Razorpay server running on port ${PORT}`));

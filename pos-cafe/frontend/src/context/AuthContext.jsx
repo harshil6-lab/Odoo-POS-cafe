@@ -36,8 +36,7 @@ export const AuthProvider = ({ children }) => {
 
       // If no user profile exists, return null (user may not have staff role yet)
       if (!data) {
-        console.warn(`No user profile found for ID: ${userId}`);
-        return null;
+        return;
       }
 
       // Validate role is a valid enum value
@@ -86,12 +85,14 @@ export const AuthProvider = ({ children }) => {
         if (location.pathname === '/login') return;
 
         if (!role) return;
-
         if (role === 'manager') navigate('/dashboard');
-        else if (role === 'waiter') navigate('/tables');
-        else if (role === 'cashier') navigate('/tables');
         else if (role === 'chef') navigate('/kitchen');
-        else navigate('/menu');
+        else if (role === 'waiter') navigate('/tables');
+        else if (role === 'cashier') navigate('/billing');
+        else {
+          alert('Invalid role assigned. Contact manager.');
+          navigate('/login');
+        }
       } catch (err) {
         if (!cancelled) {
           console.warn('Session restore error:', err.message);
@@ -155,13 +156,19 @@ export const AuthProvider = ({ children }) => {
       throw new Error('Login failed: No user data returned.');
     }
 
-    // CRITICAL: Fetch and validate role BEFORE updating context
-    const role = await fetchUserRole(data.user.id);
+    // Fetch role from users table — profile must already exist from signup
+    const { data: profile } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', data.user.id)
+      .maybeSingle();
 
-    if (!role) {
+    if (!profile || !profile.role) {
       await supabase.auth.signOut();
-      throw new Error('Your account does not have a staff role assigned. Contact your manager.');
+      throw new Error('User profile missing. Contact manager to set up your account.');
     }
+
+    const role = profile.role;
 
     setSession(data.session);
     setUser(data.user);
@@ -170,14 +177,11 @@ export const AuthProvider = ({ children }) => {
     // Calculate redirect path based on role
     const redirectMap = {
       manager: '/dashboard',
-      waiter: '/tables',
-      cashier: '/tables',
       chef: '/kitchen',
-      admin: '/dashboard',
-      kitchen: '/kitchen',
+      waiter: '/tables',
+      cashier: '/billing',
     };
-
-    return { redirectTo: redirectMap[role] || '/menu' };
+    return { redirectTo: redirectMap[role] };
   };
 
   const signup = async (payload) => {

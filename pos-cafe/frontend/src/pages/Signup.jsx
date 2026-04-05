@@ -10,8 +10,9 @@ const STAFF_ROLES = ['manager', 'waiter', 'cashier', 'chef'];
 
 function Signup() {
   const navigate = useNavigate();
-  const { user, signup, redirectPath, loading: authLoading } = useAuth();
-  const [form, setForm] = useState({ fullName: '', phone: '', email: '', password: '', role: 'waiter' });
+  const { user, redirectPath, loading: authLoading } = useAuth();
+  const [form, setForm] = useState({ fullName: '', phone: '', email: '', password: '' });
+  const [selectedRole, setSelectedRole] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -31,58 +32,71 @@ function Signup() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    if (loading) return;
     setLoading(true);
     setError('');
     setSuccess('');
 
-    try {
-      // Validate role is selected
-      if (!form.role || !STAFF_ROLES.includes(form.role)) {
-        throw new Error('Please select a valid role: ' + STAFF_ROLES.join(', '));
-      }
-
-      const result = await signup(form);
-      const authUser = result.data?.user;
-
-      if (!authUser) {
-        throw new Error('Signup failed: No user created.');
-      }
-
-      // Supabase trigger auto-creates the user row — just update the role and name
-      const { data: updatedUser, error: updateError } = await supabase
-        .from('users')
-        .update({
-          role: form.role,
-          full_name: form.fullName || 'Staff Member',
-        })
-        .eq('id', authUser.id)
-        .select('id, email, role, full_name')
-        .maybeSingle();
-
-      if (updateError) {
-        await supabase.auth.signOut();
-        throw new Error('Failed to assign role: ' + updateError.message);
-      }
-
-      if (updatedUser && updatedUser.role !== form.role) {
-        console.warn(
-          `Role mismatch after update: expected ${form.role}, got ${updatedUser.role}`
-        );
-      }
-
-      setSuccess('Staff account created! You can now sign in with your credentials.');
-      setForm({ fullName: '', phone: '', email: '', password: '', role: 'waiter' });
-
-      // Auto-redirect to login after 2 seconds
-      setTimeout(() => {
-        navigate('/login', { replace: true });
-      }, 2000);
-    } catch (err) {
-      console.error('Signup error:', err);
-      setError(err.message ?? 'Unable to sign up.');
-    } finally {
+    if (!selectedRole || !STAFF_ROLES.includes(selectedRole)) {
+      setError('Please select a valid role: ' + STAFF_ROLES.join(', '));
       setLoading(false);
+      return;
     }
+
+    // Only create auth account
+    const { data, error: signUpError } = await supabase.auth.signUp({
+      email: form.email,
+      password: form.password,
+      options: {
+        data: {
+          full_name: form.fullName,
+        },
+      },
+    });
+
+    if (signUpError) {
+      setError(signUpError.message);
+      setLoading(false);
+      return;
+    }
+
+    const userId = data?.user?.id;
+
+    if (!userId) {
+      setError('Signup succeeded but user ID missing.');
+      setLoading(false);
+      return;
+    }
+
+    // Upsert profile so role is stored immediately
+    console.log('FINAL ROLE SENT:', selectedRole);
+    const { error: insertError } = await supabase.from('users').insert({
+      id: userId,
+      email: form.email,
+      full_name: form.fullName || 'Staff User',
+      role: selectedRole,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    });
+
+    if (insertError) {
+      console.error('INSERT ERROR:', insertError.message);
+      setError(insertError.message);
+      setLoading(false);
+      return;
+    }
+
+    // Sign out so user logs in fresh
+    await supabase.auth.signOut();
+
+    setSuccess('Account created! You can now sign in.');
+    setForm({ fullName: '', phone: '', email: '', password: '' });
+    setSelectedRole('');
+    setLoading(false);
+
+    setTimeout(() => {
+      navigate('/login', { replace: true });
+    }, 2000);
   };
 
   return (
@@ -146,14 +160,19 @@ function Signup() {
         <label className="grid gap-2 text-sm font-medium text-slate-300">
           Role
           <select
-            name="role"
-            value={form.role}
-            onChange={handleChange}
+            value={selectedRole}
+            onChange={(e) => {
+              console.log('Selected role:', e.target.value);
+              setSelectedRole(e.target.value);
+            }}
             className="h-11 w-full rounded-xl border border-white/[0.08] bg-surface px-4 text-sm text-white focus:border-primary/50 focus:outline-none"
+            required
           >
-            {STAFF_ROLES.map((r) => (
-              <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>
-            ))}
+            <option value="" disabled>Select role</option>
+            <option value="manager">Manager</option>
+            <option value="waiter">Waiter</option>
+            <option value="chef">Chef</option>
+            <option value="cashier">Cashier</option>
           </select>
         </label>
 
