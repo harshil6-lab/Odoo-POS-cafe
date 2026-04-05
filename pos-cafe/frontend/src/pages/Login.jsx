@@ -1,34 +1,16 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
-import { supabase } from '../services/supabaseClient';
 import AuthLayout from '../layouts/AuthLayout';
 
 function Login() {
   const navigate = useNavigate();
-  const { fetchUserRole } = useAuth();
+  const { login } = useAuth();
   const [form, setForm] = useState({ email: '', password: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-
-  useEffect(() => {
-    const checkSession = async () => {
-      if (sessionStorage.getItem("table_code"))
-        return;
-
-      const {
-        data: { session },
-        error
-      } = await supabase.auth.getSession();
-
-      if (error || !session)
-        return;
-    };
-
-    checkSession();
-  }, []);
 
   const handleChange = (event) => {
     setForm((current) => ({
@@ -39,57 +21,21 @@ function Login() {
 
   const handleLogin = async (event) => {
     event.preventDefault();
+    if (loading) return;
     setLoading(true);
     setError('');
 
     try {
-      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+      const { redirectTo } = await login({
         email: form.email,
         password: form.password,
       });
 
-      if (signInError) {
-        setError(signInError.message);
-        setLoading(false);
-        return;
-      }
-
-      if (!data?.user) {
-        setError('Login failed: No user data returned.');
-        setLoading(false);
-        return;
-      }
-
-      // CRITICAL: Fetch role IMMEDIATELY after login
-      // This determines where the user is redirected
-      const userRole = await fetchUserRole(data.user.id);
-
-      if (!userRole) {
-        // User logged in but has no staff role
-        await supabase.auth.signOut();
-        setError('Your account does not have a staff role assigned. Contact your manager.');
-        setLoading(false);
-        return;
-      }
-
-      // Log successful role fetch for debugging
-      console.log(`User ${data.user.email} logged in with role: ${userRole}`);
-
-      // Redirect based on role
-      const redirectMap = {
-        manager: '/dashboard',
-        waiter: '/tables',
-        cashier: '/billing',
-        chef: '/kitchen',
-      };
-
-      const redirectPath = redirectMap[userRole] || '/login';
+      const redirectPath = redirectTo || '/login';
       navigate(redirectPath, { replace: true });
-
-      setLoading(false);
     } catch (err) {
-      console.error('Login error:', err);
       setError(err.message ?? 'Login failed. Please try again.');
+    } finally {
       setLoading(false);
     }
   };

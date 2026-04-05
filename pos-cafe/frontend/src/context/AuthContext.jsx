@@ -1,5 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { authService } from '../services/authService';
 import { supabase } from '../services/supabaseClient';
 import { getRedirectPathForRole, getRoleBadgeLabel } from '../utils/roleNavigation';
@@ -7,101 +6,71 @@ import { getRedirectPathForRole, getRoleBadgeLabel } from '../utils/roleNavigati
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const navigate = useNavigate();
-  const location = useLocation();
   const [session, setSession] = useState(null);
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [role, setRole] = useState(null);
   const [loading, setLoading] = useState(true);
+  const loginInFlightRef = useRef(null);
+  const pendingAuthProfileRef = useRef(null);
 
-  const fetchUserRole = async (userId) => {
+  const applyAuthState = (nextSession, nextProfile) => {
+    const nextRole = nextProfile?.role ?? null;
+
+    setSession(nextSession ?? null);
+    setUser(nextSession?.user ?? null);
+    setProfile(nextProfile ?? null);
+    setRole(nextRole);
+  };
+
+  const clearAuthState = () => {
+    setSession(null);
+    setUser(null);
+    setProfile(null);
+    setRole(null);
+  };
+
+  const fetchUserProfile = async (userId) => {
     if (!userId) {
-      console.warn('fetchUserRole called without userId');
       return null;
     }
 
+    const { data, error } = await supabase
+      .from('users')
+      .select('id, role, email, full_name')
+      .eq('id', userId)
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    const validRoles = ['admin', 'manager', 'cashier', 'kitchen', 'customer', 'waiter', 'chef'];
+    const normalizedRole = String(data?.role || '').toLowerCase();
+
+    if (!validRoles.includes(normalizedRole)) {
+      return null;
+    }
+
+    return {
+      id: data.id,
+      email: data.email,
+      full_name: data.full_name,
+      role: normalizedRole,
+    };
+  };
+
+  const fetchUserRole = async (userId) => {
     try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('id, role, email, full_name')
-        .eq('id', userId)
-        .limit(1)
-        .maybeSingle();
-
-      if (error) {
-        console.error('Role fetch error:', error);
-        return null;
-      }
-
-      // If no user profile exists, return null (user may not have staff role yet)
-      if (!data) {
-        return;
-      }
-
-      // Validate role is a valid enum value
-      const validRoles = ['admin', 'manager', 'cashier', 'kitchen', 'customer', 'waiter', 'chef'];
-      const normalizedRole = (data.role || '').toLowerCase();
-      
-      if (!validRoles.includes(normalizedRole)) {
-        console.warn(`Invalid role for user ${data.email}: ${data.role}`);
-        return null;
-      }
-
-      return normalizedRole;
+      const nextProfile = await fetchUserProfile(userId);
+      return nextProfile?.role ?? null;
     } catch (err) {
-      console.error('Unexpected error fetching role:', err);
       return null;
     }
   };
 
   useEffect(() => {
     let cancelled = false;
-
-    const restoreSession = async () => {
-      try {
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-
-        if (cancelled) return;
-
-        if (sessionError || !session) {
-          setLoading(false);
-          return;
-        }
-
-        const role = await fetchUserRole(session.user.id);
-
-        if (cancelled) return;
-
-        setSession(session);
-        setUser(session.user);
-        setRole(role);
-        setLoading(false);
-
-        // QR customers have a table_code in sessionStorage — skip staff redirect
-        if (sessionStorage.getItem('table_code')) return;
-
-        // Login page handles its own redirect after credentials are entered
-        if (location.pathname === '/login') return;
-
-        if (!role) return;
-        if (role === 'manager') navigate('/dashboard');
-        else if (role === 'chef') navigate('/kitchen');
-        else if (role === 'waiter') navigate('/tables');
-        else if (role === 'cashier') navigate('/billing');
-        else {
-          alert('Invalid role assigned. Contact manager.');
-          navigate('/login');
-        }
-      } catch (err) {
-        if (!cancelled) {
-          console.warn('Session restore error:', err.message);
-          setLoading(false);
-        }
-      }
-    };
-
-    restoreSession();
 
     const {
       data: { subscription },
@@ -111,27 +80,30 @@ export const AuthProvider = ({ children }) => {
       // Stale token — clean up instead of looping
       if (event === 'TOKEN_REFRESHED' && !nextSession) {
         await supabase.auth.signOut();
-        setSession(null);
-        setUser(null);
-        setRole(null);
-        setProfile(null);
+        pendingAuthProfileRef.current = null;
+        clearAuthState();
         setLoading(false);
         return;
       }
 
       if (!nextSession?.user) {
-        setSession(null);
-        setUser(null);
-        setRole(null);
-        setProfile(null);
+        pendingAuthProfileRef.current = null;
+        clearAuthState();
         setLoading(false);
         return;
       }
 
-      const role = await fetchUserRole(nextSession.user.id);
-      setSession(nextSession);
-      setUser(nextSession.user);
-      setRole(role);
+      try {
+        const cachedProfile = pendingAuthProfileRef.current;
+        const nextProfile = cachedProfile?.id === nextSession.user.id
+          ? cachedProfile
+          : await fetchUserProfile(nextSession.user.id).catch(() => null);
+
+        pendingAuthProfileRef.current = null;
+        applyAuthState(nextSession, nextProfile);
+      } finally {
+        setLoading(false);
+      }
     });
 
     return () => {
@@ -145,43 +117,51 @@ export const AuthProvider = ({ children }) => {
       throw new Error('Enter email and password to continue.');
     }
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: credentials.email,
-      password: credentials.password,
-    });
-
-    if (error) throw new Error(error.message);
-
-    if (!data?.user) {
-      throw new Error('Login failed: No user data returned.');
+    if (loginInFlightRef.current) {
+      return loginInFlightRef.current;
     }
 
-    // Fetch role from users table — profile must already exist from signup
-    const { data: profile } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', data.user.id)
-      .maybeSingle();
+    loginInFlightRef.current = (async () => {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: credentials.email,
+        password: credentials.password,
+      });
 
-    if (!profile || !profile.role) {
-      await supabase.auth.signOut();
-      throw new Error('User profile missing. Contact manager to set up your account.');
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      const nextUser = data?.user;
+
+      if (!nextUser) {
+        throw new Error('Login failed: No user data returned.');
+      }
+
+      const nextProfile = await fetchUserProfile(nextUser.id).catch(() => null);
+
+      if (!nextProfile?.role) {
+        await supabase.auth.signOut();
+        throw new Error('User profile not found');
+      }
+
+      pendingAuthProfileRef.current = nextProfile;
+      applyAuthState(data.session ?? null, nextProfile);
+
+      const redirectMap = {
+        manager: '/dashboard',
+        chef: '/kitchen',
+        waiter: '/tables',
+        cashier: '/billing',
+      };
+
+      return { redirectTo: redirectMap[nextProfile.role] || '/login' };
+    })();
+
+    try {
+      return await loginInFlightRef.current;
+    } finally {
+      loginInFlightRef.current = null;
     }
-
-    const role = profile.role;
-
-    setSession(data.session);
-    setUser(data.user);
-    setRole(role);
-
-    // Calculate redirect path based on role
-    const redirectMap = {
-      manager: '/dashboard',
-      chef: '/kitchen',
-      waiter: '/tables',
-      cashier: '/billing',
-    };
-    return { redirectTo: redirectMap[role] };
   };
 
   const signup = async (payload) => {
