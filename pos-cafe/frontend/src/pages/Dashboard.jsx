@@ -59,11 +59,17 @@ export default function Dashboard() {
   const liveOrders = realLiveOrders && realLiveOrders.length > 0 ? realLiveOrders : dummyLiveOrders;
   const catalogItems = realCatalogItems && realCatalogItems.length > 0 ? realCatalogItems : dummyCatalogItems;
 
+  // Dummy analytics for manager panel
+  const dummyRevenue = 12850;
+  const dummyOrdersCount = 56;
+  const dummyAvgOrderValue = 229;
+  const dummyCustomers = 42;
+
   const metrics = [
-    { label: 'Tables in service', value: tables.filter((table) => table.status === 'occupied').length, meta: 'Across both floors' },
-    { label: 'Reservations', value: reservations.length, meta: 'Synced from Supabase' },
-    { label: 'Kitchen tickets', value: kitchenTickets.length, meta: 'Waiting in the kitchen queue' },
-    { label: 'Live customer orders', value: liveOrders.length, meta: 'Placed from QR or customer menu' },
+    { label: 'Revenue (₹)', value: formatCurrency(dummyRevenue), meta: 'Today' },
+    { label: 'Orders', value: dummyOrdersCount, meta: 'Completed today' },
+    { label: 'Avg. Order Value', value: `₹${dummyAvgOrderValue}`, meta: 'This week' },
+    { label: 'Customers', value: dummyCustomers, meta: 'Served today' },
   ];
 
   const handleToggleAvailability = async (item) => {
