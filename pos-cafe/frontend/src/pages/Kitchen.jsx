@@ -6,7 +6,20 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card'
 import KitchenStatusBadge, { KITCHEN_ORDER_STATUSES } from '../components/KitchenStatusBadge';
 import { supabase } from '../services/supabaseClient';
 
-const ORDER_SELECT = '*, order_items(*, menu_items(name)), tables(table_code)';
+const ORDER_SELECT = `
+  id,
+  customer_name,
+  status,
+  created_at,
+  order_items (
+    id,
+    quantity,
+    notes,
+    menu_item_id,
+    menu_items (name, price)
+  ),
+  tables (table_code)
+`;
 
 function mapOrder(raw) {
   return {
@@ -19,6 +32,7 @@ function mapOrder(raw) {
       id: oi.id,
       name: oi.menu_items?.name ?? 'Item',
       quantity: oi.quantity,
+      price: oi.menu_items?.price ?? 0,
     })),
   };
 }
@@ -39,7 +53,7 @@ export default function Kitchen() {
       return;
     }
 
-    console.log('Kitchen orders:', data);
+    console.log('Kitchen Data:', data);
     setOrders((data ?? []).map(mapOrder));
     setLoading(false);
   }, []);

@@ -77,7 +77,11 @@ export async function getOrderById(orderId) {
 }
 
 export async function createOrder(payload) {
-  const { data, error } = await supabase.from('orders').insert([payload]).select('id').limit(1).maybeSingle();
+  const { data, error } = await supabase
+    .from('orders')
+    .insert([{ ...payload, created_at: new Date().toISOString() }])
+    .select()
+    .single();
 
   if (error) {
     throw error;
@@ -99,6 +103,7 @@ export async function addOrderItems(orderId, items) {
     unit_price: item.unit_price,
     line_total: item.unit_price * item.quantity,
     notes: (item.preferences ?? []).join(', ') || null,
+    created_at: new Date().toISOString(),
   }));
 
   const { data, error } = await supabase.from('order_items').insert(rows).select('*');

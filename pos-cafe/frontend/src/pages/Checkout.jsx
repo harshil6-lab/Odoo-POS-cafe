@@ -70,9 +70,10 @@ export default function Checkout() {
           tax: taxAmount,
           service_charge: serviceCharge,
           total: totalAmount,
+          created_at: new Date().toISOString(),
         })
         .select()
-        .maybeSingle();
+        .single();
 
       if (orderError) throw new Error(orderError.message);
       if (!newOrder) throw new Error('Order creation failed — ensure RLS allows inserts for this role.');
@@ -87,6 +88,7 @@ export default function Checkout() {
           unit_price: item.price,
           line_total: parseFloat((item.price * item.quantity).toFixed(2)),
           notes: item.preferences?.join(', ') || null,
+          created_at: new Date().toISOString(),
         })),
       );
 
@@ -200,9 +202,10 @@ export default function Checkout() {
                 tax: taxAmount,
                 service_charge: serviceCharge,
                 total: totalAmount,
+                created_at: new Date().toISOString(),
               })
               .select()
-              .maybeSingle();
+              .single();
 
             if (orderError) throw new Error(orderError.message);
             if (!newOrder) throw new Error('Order creation failed.');
@@ -217,6 +220,7 @@ export default function Checkout() {
                 unit_price: item.price,
                 line_total: parseFloat((item.price * item.quantity).toFixed(2)),
                 notes: item.preferences?.join(', ') || null,
+                created_at: new Date().toISOString(),
               })),
             );
 
