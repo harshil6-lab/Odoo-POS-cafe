@@ -36,8 +36,7 @@ export const AuthProvider = ({ children }) => {
 
       // If no user profile exists, return null (user may not have staff role yet)
       if (!data) {
-        console.warn(`No user profile found for ID: ${userId}`);
-        return null;
+        return;
       }
 
       // Validate role is a valid enum value
@@ -86,12 +85,14 @@ export const AuthProvider = ({ children }) => {
         if (location.pathname === '/login') return;
 
         if (!role) return;
-
         if (role === 'manager') navigate('/dashboard');
-        else if (role === 'waiter') navigate('/tables');
-        else if (role === 'cashier') navigate('/tables');
         else if (role === 'chef') navigate('/kitchen');
-        else navigate('/menu');
+        else if (role === 'waiter') navigate('/tables');
+        else if (role === 'cashier') navigate('/billing');
+        else {
+          alert('Invalid role assigned. Contact manager.');
+          navigate('/login');
+        }
       } catch (err) {
         if (!cancelled) {
           console.warn('Session restore error:', err.message);
@@ -176,14 +177,11 @@ export const AuthProvider = ({ children }) => {
     // Calculate redirect path based on role
     const redirectMap = {
       manager: '/dashboard',
-      waiter: '/tables',
-      cashier: '/tables',
       chef: '/kitchen',
-      admin: '/dashboard',
-      kitchen: '/kitchen',
+      waiter: '/tables',
+      cashier: '/billing',
     };
-
-    return { redirectTo: redirectMap[role] || '/menu' };
+    return { redirectTo: redirectMap[role] };
   };
 
   const signup = async (payload) => {
