@@ -18,13 +18,13 @@ const ORDER_SELECT = `
     menu_item_id,
     menu_items (name, price)
   ),
-  tables (table_code)
+  table:tables!orders_table_id_fkey(table_code)
 `;
 
 function mapOrder(raw) {
   return {
     id: raw.id,
-    tableCode: raw.tables?.table_code ?? 'N/A',
+    tableCode: raw.table?.table_code ?? 'N/A',
     customerName: raw.customer_name ?? 'Guest',
     status: String(raw.status || 'pending').toLowerCase(),
     createdAt: raw.created_at,
