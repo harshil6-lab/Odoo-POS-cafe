@@ -155,44 +155,39 @@ export const AuthProvider = ({ children }) => {
       throw new Error('Login failed: No user data returned.');
     }
 
-    // Ensure profile row exists (create on first login if trigger didn't)
-    let role = await fetchUserRole(data.user.id);
+    // Check if profile exists
+    const { data: profile } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', data.user.id)
+      .maybeSingle();
 
-    if (!role) {
+    if (!profile) {
+      console.log('Creating missing user profile...');
       const meta = data.user.user_metadata || {};
-      const selectedRole = meta.selected_role || 'customer';
+      const { error: insertErr } = await supabase.from('users').insert({
+        id: data.user.id,
+        email: data.user.email,
+        full_name: meta.full_name || 'Staff User',
+        role: 'manager',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
 
-      const { data: existing } = await supabase
-        .from('users')
-        .select('id')
-        .eq('id', data.user.id)
-        .maybeSingle();
-
-      if (!existing) {
-        await supabase.from('users').insert({
-          id: data.user.id,
-          email: data.user.email,
-          full_name: meta.full_name || 'Staff User',
-          role: selectedRole,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        });
-      } else {
-        await supabase
-          .from('users')
-          .update({ role: selectedRole })
-          .eq('id', data.user.id);
+      if (insertErr) {
+        console.error('Profile insert failed:', insertErr.message);
+        throw new Error('Failed to create user profile: ' + insertErr.message);
       }
-
-      // Re-fetch to confirm profile was created
-      const { data: newProfile } = await supabase
-        .from('users')
-        .select('role')
-        .eq('id', data.user.id)
-        .maybeSingle();
-
-      role = newProfile?.role || selectedRole;
     }
+
+    // Fetch role (re-fetch to get latest)
+    const { data: updatedProfile } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', data.user.id)
+      .single();
+
+    const role = updatedProfile?.role || 'manager';
 
     setSession(data.session);
     setUser(data.user);
