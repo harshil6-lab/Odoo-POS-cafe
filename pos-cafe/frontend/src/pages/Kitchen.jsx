@@ -59,10 +59,7 @@ export default function Kitchen() {
       return;
     }
 
-<<<<<<< HEAD
-=======
-    console.log('Kitchen Orders:', data);
->>>>>>> 712a605969e120f9f9fd4adf7f57ed5270e23265
+  console.log('Kitchen Orders:', data);
     setOrders((data ?? []).map(mapOrder));
     setLoading(false);
   }, []);
