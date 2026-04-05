@@ -13,7 +13,7 @@ const orderSelect = `
   created_at,
   updated_at,
   table:tables!orders_table_id_fkey(id, table_code, status),
-  items:order_items(
+  items:order_items!order_items_order_id_fkey(
     id,
     quantity,
     price,
