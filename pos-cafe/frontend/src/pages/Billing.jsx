@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useRazorpay } from 'react-razorpay';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { useAppState } from '../context/AppStateContext';
+import { useAuth } from '../context/AuthContext';
 import { confirmPayment } from '../services/orderService';
 import { updateTableStatus } from '../services/tableService';
 import { supabase } from '../services/supabaseClient';
@@ -60,6 +62,8 @@ function mapBillOrder(raw) {
 export default function Billing() {
   const { tableId: routeTableId } = useParams();
   const navigate = useNavigate();
+  const { Razorpay } = useRazorpay();
+  const { role } = useAuth();
   const { liveOrders, refreshOrders } = useAppState();
   const [directOrders, setDirectOrders] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -68,6 +72,7 @@ export default function Billing() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
+  const modeLabel = role === 'waiter' ? 'Quick Payment' : 'Billing Mode';
   // When accessed via /billing/:tableId, fetch directly from Supabase
   const loadTableBills = useCallback(async () => {
     if (!routeTableId) return;
@@ -167,13 +172,93 @@ export default function Billing() {
     }
   };
 
+  const handleRazorpayPayment = async (method) => {
+    if (!selectedOrder) return;
+
+    setBusy(true);
+    setError('');
+    setMessage('');
+
+    try {
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+      const orderRes = await fetch(`${backendUrl}/create-order`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: selectedOrder.total }),
+      });
+
+      if (!orderRes.ok) {
+        const errBody = await orderRes.json().catch(() => ({}));
+        throw new Error(errBody.error || `Payment server error (${orderRes.status})`);
+      }
+
+      const razorpayOrder = await orderRes.json();
+
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+        amount: razorpayOrder.amount,
+        currency: razorpayOrder.currency || 'INR',
+        order_id: razorpayOrder.id,
+        name: 'Restaurant POS',
+        description: `Order ${String(selectedOrder.id).slice(0, 8)} · Table ${selectedOrder.tableId}`,
+        prefill: { name: selectedOrder.customer.name },
+        theme: { color: '#E11D48' },
+        handler: async (response) => {
+          try {
+            const paymentMethodMap = { card: 'card', upi: 'upi_qr' };
+            await supabase
+              .from('orders')
+              .update({
+                payment_status: 'paid',
+                payment_method: paymentMethodMap[method] ?? method,
+                status: 'served',
+              })
+              .eq('id', selectedOrder.id);
+
+            if (selectedOrder.tableDbId) {
+              await updateTableStatus(selectedOrder.tableDbId, 'available');
+            }
+
+            handleDownload({ ...selectedOrder, paymentMethod: method, paymentId: response.razorpay_payment_id });
+            setMessage(`${method.toUpperCase()} payment confirmed for order ${String(selectedOrder.id).slice(0, 8)}. Table released.`);
+
+            if (routeTableId) {
+              setTimeout(() => navigate('/tables'), 1200);
+            } else {
+              await refreshOrders();
+            }
+          } catch (err) {
+            setError(err.message || 'Payment succeeded but order update failed.');
+          } finally {
+            setBusy(false);
+          }
+        },
+        modal: {
+          ondismiss: () => {
+            setBusy(false);
+          },
+        },
+      };
+
+      const rzp = new Razorpay(options);
+      rzp.on('payment.failed', (resp) => {
+        setError(resp.error?.description || 'Payment failed. Please try again.');
+        setBusy(false);
+      });
+      rzp.open();
+    } catch (err) {
+      setError(err.message || 'Unable to start payment.');
+      setBusy(false);
+    }
+  };
+
   return (
     <div className="page-container space-y-6">
       <div className="glass-card p-6">
         <div className="flex items-center gap-3">
           <span className="text-2xl">💳</span>
           <div>
-            <p className="text-xs font-medium uppercase tracking-wider text-slate-500">Cashier workspace</p>
+            <p className="text-xs font-medium uppercase tracking-wider text-slate-500">{modeLabel}</p>
             <h1 className="mt-1 font-display text-2xl font-bold tracking-tight text-white">Billing</h1>
             <p className="mt-1 text-sm text-slate-400">
               Review live orders, confirm payment, generate invoices, and release the table.
@@ -273,8 +358,22 @@ export default function Billing() {
 
                 <div className="flex flex-wrap justify-end gap-2">
                   <Button variant="outline" onClick={() => handleDownload(selectedOrder)}>Download invoice</Button>
+                  <Button
+                    variant="outline"
+                    disabled={busy || selectedOrder.paymentStatus === 'paid'}
+                    onClick={() => void handleRazorpayPayment('card')}
+                  >
+                    {busy ? 'Processing...' : 'Pay with Card'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    disabled={busy || selectedOrder.paymentStatus === 'paid'}
+                    onClick={() => void handleRazorpayPayment('upi')}
+                  >
+                    {busy ? 'Processing...' : 'Pay with UPI'}
+                  </Button>
                   <Button disabled={busy || selectedOrder.paymentStatus === 'paid'} onClick={() => void handleConfirmPayment()}>
-                    {busy ? 'Confirming...' : selectedOrder.paymentStatus === 'paid' ? 'Already paid' : 'Confirm payment'}
+                    {busy ? 'Confirming...' : selectedOrder.paymentStatus === 'paid' ? 'Already paid' : 'Confirm cash'}
                   </Button>
                 </div>
               </>
