@@ -52,7 +52,7 @@ const redirectByRole = {
   customer: '/menu',
   waiter: '/tables',
   manager: '/dashboard',
-  cashier: '/tables',
+  cashier: '/billing',
   chef: '/kitchen',
 };
 
