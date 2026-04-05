@@ -21,7 +21,7 @@ export default function CustomerDisplay() {
     const fetchOrder = async () => {
       const { data, error } = await supabase
         .from('orders')
-        .select('*, order_items(*, menu_items(name)), tables(table_code)')
+        .select('*, order_items(*, menu_items(name)), tables!orders_table_id_fkey(table_code)')
         .eq('id', orderId)
         .limit(1)
         .maybeSingle();
