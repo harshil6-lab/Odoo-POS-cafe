@@ -109,6 +109,151 @@ async function seedMenuItems(client) {
   }
 }
 
+async function seedKitchenOrders(client) {
+  // Load table and menu_item IDs
+  const { data: tables } = await client.from('tables').select('id, table_code');
+  const { data: items } = await client.from('menu_items').select('id, name, price');
+
+  if (!tables?.length || !items?.length) {
+    console.warn('Skipping kitchen seed — tables or menu_items missing.');
+    return;
+  }
+
+  const tableMap = new Map(tables.map((t) => [t.table_code, t.id]));
+  const itemMap = new Map(items.map((i) => [i.name, { id: i.id, price: i.price }]));
+
+  const dummyOrders = [
+    {
+      table_code: 'G1',
+      customer_name: 'Aarav Sharma',
+      payment_method: 'cash',
+      status: 'pending',
+      items: [
+        { name: 'Margherita Pizza', qty: 1 },
+        { name: 'Cold Brew', qty: 2 },
+      ],
+    },
+    {
+      table_code: 'G3',
+      customer_name: 'Priya Patel',
+      payment_method: 'upi_qr',
+      status: 'pending',
+      items: [
+        { name: 'Club Sandwich', qty: 2 },
+        { name: 'Masala Chai', qty: 2 },
+        { name: 'Fries', qty: 1 },
+      ],
+    },
+    {
+      table_code: 'G5',
+      customer_name: 'Rohan Mehta',
+      payment_method: 'card',
+      status: 'preparing',
+      items: [
+        { name: 'Cheese Burger', qty: 1 },
+        { name: 'Fries', qty: 1 },
+        { name: 'Iced Coffee', qty: 1 },
+      ],
+    },
+    {
+      table_code: 'G7',
+      customer_name: 'Sneha Verma',
+      payment_method: 'cash',
+      status: 'preparing',
+      items: [
+        { name: 'White Sauce Pasta', qty: 1 },
+        { name: 'Garlic Bread', qty: 2 },
+      ],
+    },
+    {
+      table_code: 'F2',
+      customer_name: 'Vikram Singh',
+      payment_method: 'upi_qr',
+      status: 'cooking',
+      items: [
+        { name: 'Farmhouse Pizza', qty: 1 },
+        { name: 'Nachos', qty: 1 },
+        { name: 'Latte', qty: 2 },
+      ],
+    },
+    {
+      table_code: 'F4',
+      customer_name: 'Ananya Gupta',
+      payment_method: 'card',
+      status: 'cooking',
+      items: [
+        { name: 'Paneer Tikka', qty: 1 },
+        { name: 'Red Sauce Pasta', qty: 1 },
+        { name: 'Green Tea', qty: 1 },
+      ],
+    },
+    {
+      table_code: 'G9',
+      customer_name: 'Karan Joshi',
+      payment_method: 'cash',
+      status: 'ready',
+      items: [
+        { name: 'Veg Burger', qty: 2 },
+        { name: 'Brownie', qty: 2 },
+        { name: 'Cappuccino', qty: 2 },
+      ],
+    },
+    {
+      table_code: 'F6',
+      customer_name: 'Meera Iyer',
+      payment_method: 'upi_qr',
+      status: 'ready',
+      items: [
+        { name: 'Spring Rolls', qty: 1 },
+        { name: 'Paneer Wrap', qty: 1 },
+        { name: 'Lemon Tea', qty: 2 },
+      ],
+    },
+  ];
+
+  for (const order of dummyOrders) {
+    const tableId = tableMap.get(order.table_code);
+    if (!tableId) continue;
+
+    const { data: createdOrder, error: orderErr } = await client
+      .from('orders')
+      .insert({
+        table_id: tableId,
+        customer_name: order.customer_name,
+        payment_method: order.payment_method,
+        status: order.status,
+      })
+      .select('id')
+      .single();
+
+    if (orderErr) {
+      console.error(`Order insert failed for ${order.customer_name}:`, orderErr.message);
+      continue;
+    }
+
+    const orderItemRows = order.items
+      .filter((i) => itemMap.has(i.name))
+      .map((i) => ({
+        order_id: createdOrder.id,
+        menu_item_id: itemMap.get(i.name).id,
+        quantity: i.qty,
+        preferences: {},
+      }));
+
+    if (orderItemRows.length) {
+      const { error: itemErr } = await client.from('order_items').insert(orderItemRows);
+      if (itemErr) {
+        console.error(`Order items insert failed for order ${createdOrder.id}:`, itemErr.message);
+      }
+    }
+
+    // Mark table as occupied
+    await client.from('tables').update({ status: 'occupied' }).eq('id', tableId);
+  }
+
+  console.log(`Seeded ${dummyOrders.length} kitchen orders.`);
+}
+
 export async function seedDatabase() {
   const client = createServiceClient();
 
@@ -117,6 +262,7 @@ export async function seedDatabase() {
   await seedCategories(client);
   await seedTables(client);
   await seedMenuItems(client);
+  await seedKitchenOrders(client);
 }
 
 const isDirectRun = process.argv[1] && new URL(import.meta.url).pathname.endsWith(process.argv[1].replace(/\\/g, '/'));
