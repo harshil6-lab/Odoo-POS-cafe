@@ -66,13 +66,51 @@ export default function Billing() {
   const navigate = useNavigate();
   const { Razorpay } = useRazorpay();
   const { role } = useAuth();
-  const { liveOrders, refreshOrders } = useAppState();
+  const { liveOrders: realLiveOrders, refreshOrders } = useAppState();
   const [directOrders, setDirectOrders] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+
+  // Dummy billing orders for cashier
+  const dummyOrders = [
+    {
+      id: 'dummy1',
+      tableId: 'G1',
+      tableDbId: 'dummy-g1',
+      customer: { name: 'Alice' },
+      status: 'pending',
+      paymentStatus: 'pending',
+      paymentMethod: 'cash',
+      tax: 18,
+      serviceCharge: 10,
+      total: 327,
+      createdAt: new Date().toISOString(),
+      items: [
+        { id: 'i1', name: 'Pizza', quantity: 2, price: 129, lineTotal: 258 },
+        { id: 'i2', name: 'Coffee', quantity: 1, price: 69, lineTotal: 69 },
+      ],
+    },
+    {
+      id: 'dummy2',
+      tableId: 'F1',
+      tableDbId: 'dummy-f1',
+      customer: { name: 'Bob' },
+      status: 'pending',
+      paymentStatus: 'pending',
+      paymentMethod: 'card',
+      tax: 12,
+      serviceCharge: 8,
+      total: 220,
+      createdAt: new Date().toISOString(),
+      items: [
+        { id: 'i3', name: 'Burger', quantity: 1, price: 120, lineTotal: 120 },
+        { id: 'i4', name: 'Tea', quantity: 2, price: 50, lineTotal: 100 },
+      ],
+    },
+  ];
 
   const modeLabel = role === 'waiter' ? 'Quick Payment' : 'Billing Mode';
   // When accessed via /billing/:tableId, fetch directly from Supabase
@@ -105,9 +143,11 @@ export default function Billing() {
     }
   }, [routeTableId, loadTableBills, refreshOrders]);
 
+
   // Use direct query results for table-specific billing, shared state for general billing
+  const liveOrders = realLiveOrders && realLiveOrders.length > 0 ? realLiveOrders : dummyOrders;
   const filteredOrders = useMemo(() => {
-    if (routeTableId) return directOrders;
+    if (routeTableId) return directOrders.length > 0 ? directOrders : dummyOrders.filter(o => o.tableId === routeTableId);
     return liveOrders.filter((order) => order.paymentStatus === 'pending');
   }, [routeTableId, directOrders, liveOrders]);
 

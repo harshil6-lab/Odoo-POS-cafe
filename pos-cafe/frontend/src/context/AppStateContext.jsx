@@ -216,9 +216,14 @@ export function AppStateProvider({ children }) {
   const findTable = (tableIdentifier) => tables.find((table) => table.id === tableIdentifier || table.dbId === tableIdentifier);
 
   const refreshTables = useCallback(async () => {
-    const nextTables = await getTables();
-    setTables(nextTables);
-    return nextTables;
+    try {
+      const nextTables = await getTables();
+      setTables(nextTables);
+      return nextTables;
+    } catch (err) {
+      console.error('Error refreshing tables:', err);
+      return [];
+    }
   }, []);
 
   const refreshCatalog = useCallback(async () => {
@@ -229,15 +234,27 @@ export function AppStateProvider({ children }) {
   }, []);
 
   const refreshOrders = useCallback(async () => {
-    const orders = await getOrders({ statuses: ['pending', 'preparing', 'cooking', 'ready'] });
-    setLiveOrders(orders);
-    return orders;
+    try {
+      const orders = await getOrders({ statuses: ['pending', 'preparing', 'cooking', 'ready'] });
+      setLiveOrders(orders);
+      return orders;
+    } catch (err) {
+      console.error('Error refreshing orders:', err);
+      setLiveOrders([]);
+      return [];
+    }
   }, []);
 
   const refreshReservations = useCallback(async () => {
-    const nextReservations = await getReservations();
-    setReservations(nextReservations);
-    return nextReservations;
+    try {
+      const nextReservations = await getReservations();
+      setReservations(nextReservations);
+      return nextReservations;
+    } catch (err) {
+      console.error('Error refreshing reservations:', err);
+      setReservations([]);
+      return [];
+    }
   }, []);
 
   useEffect(() => {

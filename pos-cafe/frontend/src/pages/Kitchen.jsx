@@ -33,6 +33,7 @@ function mapOrder(raw) {
       name: oi.menu_items?.name ?? 'Item',
       quantity: oi.quantity,
       price: oi.menu_items?.price ?? 0,
+      notes: oi.notes,
     })),
   };
 }
@@ -40,6 +41,11 @@ function mapOrder(raw) {
 export default function Kitchen() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Group orders by status
+  const pendingOrders = orders.filter((o) => o.status === 'pending');
+  const preparingOrders = orders.filter((o) => o.status === 'preparing');
+  const readyOrders = orders.filter((o) => o.status === 'ready');
 
   const fetchOrders = useCallback(async () => {
     const { data, error } = await supabase
@@ -53,7 +59,7 @@ export default function Kitchen() {
       return;
     }
 
-    console.log('Kitchen Data:', data);
+    console.log('Kitchen Orders:', data);
     setOrders((data ?? []).map(mapOrder));
     setLoading(false);
   }, []);

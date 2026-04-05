@@ -15,9 +15,49 @@ const icons = [LayoutGrid, ClipboardList, Coffee, ReceiptText];
 
 export default function Dashboard() {
   const { displayName } = useAuth();
-  const { tables, reservations, kitchenTickets, liveOrders, catalogItems, refreshCatalog, syncKitchenTicketStatus } = useAppState();
+  const {
+    tables: realTables,
+    reservations: realReservations,
+    kitchenTickets: realKitchenTickets,
+    liveOrders: realLiveOrders,
+    catalogItems: realCatalogItems,
+    refreshCatalog,
+    syncKitchenTicketStatus,
+  } = useAppState();
   const [updatingItemId, setUpdatingItemId] = useState(null);
   const [updatingOrderId, setUpdatingOrderId] = useState(null);
+
+  // Dummy data fallbacks
+  const dummyTables = [
+    { id: 'G1', dbId: 'dummy-g1', label: 'Table G1', floor: 'Ground Floor', status: 'occupied', seats: 4, note: 'G1 — seats 4' },
+    { id: 'F1', dbId: 'dummy-f1', label: 'Table F1', floor: 'First Floor', status: 'available', seats: 6, note: 'F1 — seats 6' },
+  ];
+  const dummyReservations = [
+    { id: 'r1', tableId: 'G1', name: 'Alice', guests: 2, date: '2024-06-01', time: '19:00' },
+    { id: 'r2', tableId: 'F1', name: 'Bob', guests: 4, date: '2024-06-01', time: '20:00' },
+  ];
+  const dummyKitchenTickets = [
+    { id: 'kt1', tableId: 'G1', status: 'preparing', items: ['Pizza x2', 'Coffee x1'], timer: 'Live' },
+    { id: 'kt2', tableId: 'F1', status: 'ready', items: ['Burger x1'], timer: 'Live' },
+  ];
+  const dummyLiveOrders = [
+    { id: 'o1', tableId: 'G1', customer: { name: 'Alice' }, items: [{ name: 'Pizza', quantity: 2 }, { name: 'Coffee', quantity: 1 }], status: 'preparing', createdAt: new Date().toISOString() },
+    { id: 'o2', tableId: 'F1', customer: { name: 'Bob' }, items: [{ name: 'Burger', quantity: 1 }], status: 'ready', createdAt: new Date().toISOString() },
+    { id: 'o3', tableId: 'G2', customer: { name: 'Charlie' }, items: [{ name: 'Pasta', quantity: 1 }, { name: 'Tea', quantity: 2 }], status: 'cooking', createdAt: new Date().toISOString() },
+    { id: 'o4', tableId: 'F2', customer: { name: 'Diana' }, items: [{ name: 'Sandwich', quantity: 3 }], status: 'pending', createdAt: new Date().toISOString() },
+    { id: 'o5', tableId: 'G3', customer: { name: 'Eve' }, items: [{ name: 'Salad', quantity: 1 }, { name: 'Juice', quantity: 1 }], status: 'preparing', createdAt: new Date().toISOString() },
+    { id: 'o6', tableId: 'F3', customer: { name: 'Frank' }, items: [{ name: 'Pizza', quantity: 1 }, { name: 'Coffee', quantity: 2 }], status: 'ready', createdAt: new Date().toISOString() },
+  ];
+  const dummyCatalogItems = [
+    { id: 'm1', name: 'Pizza', category: 'Meals', price: 299, isAvailable: true },
+    { id: 'm2', name: 'Coffee', category: 'Drinks', price: 99, isAvailable: false },
+  ];
+
+  const tables = realTables && realTables.length > 0 ? realTables : dummyTables;
+  const reservations = realReservations && realReservations.length > 0 ? realReservations : dummyReservations;
+  const kitchenTickets = realKitchenTickets && realKitchenTickets.length > 0 ? realKitchenTickets : dummyKitchenTickets;
+  const liveOrders = realLiveOrders && realLiveOrders.length > 0 ? realLiveOrders : dummyLiveOrders;
+  const catalogItems = realCatalogItems && realCatalogItems.length > 0 ? realCatalogItems : dummyCatalogItems;
 
   const metrics = [
     { label: 'Tables in service', value: tables.filter((table) => table.status === 'occupied').length, meta: 'Across both floors' },

@@ -21,9 +21,18 @@ function matchesFloor(table, floor) {
 
 export default function Tables() {
   const navigate = useNavigate();
-  const { tables } = useAppState();
+  const { tables: realTables } = useAppState();
   const { role } = useAuth();
   const [activeFloor, setActiveFloor] = useState('Ground Floor');
+
+  // Dummy tables fallback
+  const dummyTables = [
+    { id: 'G1', dbId: 'dummy-g1', label: 'Table G1', floor: 'Ground Floor', status: 'available', seats: 4, note: 'G1 — seats 4' },
+    { id: 'G2', dbId: 'dummy-g2', label: 'Table G2', floor: 'Ground Floor', status: 'occupied', seats: 2, note: 'G2 — seats 2' },
+    { id: 'F1', dbId: 'dummy-f1', label: 'Table F1', floor: 'First Floor', status: 'reserved', seats: 6, note: 'F1 — seats 6' },
+    { id: 'F2', dbId: 'dummy-f2', label: 'Table F2', floor: 'First Floor', status: 'available', seats: 4, note: 'F2 — seats 4' },
+  ];
+  const tables = realTables && realTables.length > 0 ? realTables : dummyTables;
 
   const floorTables = useMemo(() => tables.filter((table) => matchesFloor(table, activeFloor)), [activeFloor, tables]);
   const availableCount = tables.filter((table) => table.status === 'available').length;
